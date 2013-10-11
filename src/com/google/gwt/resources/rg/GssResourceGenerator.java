@@ -90,6 +90,7 @@ import com.google.gwt.resources.client.ResourcePrototype;
 import com.google.gwt.resources.ext.ClientBundleRequirements;
 import com.google.gwt.resources.ext.ResourceContext;
 import com.google.gwt.resources.ext.ResourceGeneratorUtil;
+import com.google.gwt.resources.ext.SupportsGeneratorResultCaching;
 import com.google.gwt.resources.gss.RecordingBidiFlipper;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.gwt.user.rebind.StringSourceWriter;
@@ -105,7 +106,8 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
-public class GssResourceGenerator extends AbstractCssResourceGenerator {
+public class GssResourceGenerator extends AbstractCssResourceGenerator implements
+    SupportsGeneratorResultCaching {
   /**
    * {@link ErrorManager} used to log the errors and warning messages produced by the different
    * {@link com.google.common.css.compiler.ast.CssCompilerPass}
