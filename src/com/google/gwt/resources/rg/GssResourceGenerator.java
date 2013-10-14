@@ -272,7 +272,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   }
 
   @Override
-  protected String getCssAsText(TreeLogger logger, ResourceContext context,
+  protected String getCssExpression(TreeLogger logger, ResourceContext context,
       JMethod method) throws UnableToCompleteException {
     CssTree cssTree = cssTreeMap.get(method);
 
