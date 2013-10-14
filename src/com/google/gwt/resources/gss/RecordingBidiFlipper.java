@@ -16,6 +16,8 @@
 
 package com.google.gwt.resources.gss;
 
+import java.util.List;
+
 import com.google.common.base.Objects;
 import com.google.common.css.compiler.ast.CssCompilerPass;
 import com.google.common.css.compiler.ast.CssCompositeValueNode;
@@ -30,8 +32,6 @@ import com.google.common.css.compiler.ast.CssValueNode;
 import com.google.common.css.compiler.ast.DefaultTreeVisitor;
 import com.google.common.css.compiler.ast.MutatingVisitController;
 import com.google.common.css.compiler.passes.BiDiFlipper;
-
-import java.util.List;
 
 public class RecordingBidiFlipper extends DefaultTreeVisitor implements CssCompilerPass {
 
@@ -55,7 +55,7 @@ public class RecordingBidiFlipper extends DefaultTreeVisitor implements CssCompi
     @Override
     public <T extends CssNode> void replaceCurrentBlockChildWith(List<T> replacementNodes,
         boolean visitTheReplacementNodes) {
-      // In our case the list of replacement node should contains only one CssDeclarationNode
+      // In our case, the list of replacement node should contain only one CssDeclarationNode
       if (!hasMutation && visitingDeclarationNode != null && replacementNodes.size() == 1 &&
           replacementNodes.get(0) instanceof CssDeclarationNode) {
         CssDeclarationNode newDeclarationNode = (CssDeclarationNode) replacementNodes.get(0);
@@ -84,7 +84,7 @@ public class RecordingBidiFlipper extends DefaultTreeVisitor implements CssCompi
     }
 
     private boolean functionNodeEqual(CssFunctionNode first, CssFunctionNode second) {
-      // TODO : this test is maybe not needed, the BidiFlipper don't change the function name
+      // TODO : this test is maybe not needed, the BidiFlipper doesn't change the function name
       if (!Objects.equal(first.getFunctionName(), second.getFunctionName())) {
         return false;
       }
@@ -92,8 +92,7 @@ public class RecordingBidiFlipper extends DefaultTreeVisitor implements CssCompi
           .getChildren());
     }
 
-    private boolean isNotEqual(CssDeclarationNode first,
-        CssDeclarationNode second) {
+    private boolean isNotEqual(CssDeclarationNode first, CssDeclarationNode second) {
       return !propertyNameEqual(first.getPropertyName(), second.getPropertyName()) ||
           !propertyValuesEqual(first.getPropertyValue(), second.getPropertyValue());
     }
@@ -145,6 +144,7 @@ public class RecordingBidiFlipper extends DefaultTreeVisitor implements CssCompi
       return true;
     }
   }
+
   private static BiDiFlipper delegate;
   private RecordingMutatingVisitController mutatingVisitController;
 
@@ -163,7 +163,7 @@ public class RecordingBidiFlipper extends DefaultTreeVisitor implements CssCompi
   }
 
   /**
-   * return true if at least ne node was flipped, false otherwise.
+   * return true if at least one node was flipped, false otherwise.
    */
   public boolean nodeFlipped() {
     return mutatingVisitController.hasMutation;
@@ -173,5 +173,4 @@ public class RecordingBidiFlipper extends DefaultTreeVisitor implements CssCompi
   public void runPass() {
     mutatingVisitController.startVisit(this);
   }
-
 }
