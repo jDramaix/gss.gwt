@@ -112,3 +112,10 @@ style.ensureInjected();
 Label l = new Label("My animated label");
 l.addStyleName(style.animate());
 ```
+
+Dependency
+----------
+- Google closure stylesheet built from source : https://code.google.com/p/closure-stylesheets/wiki/BuildingFromSource
+- Google web toolkit built from trunk with this change : https://gwt-review.googlesource.com/#/c/4950/
+- Google Guava 12+
+
