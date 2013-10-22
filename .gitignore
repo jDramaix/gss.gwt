@@ -9,3 +9,4 @@ target
 .gwt
 bin
 META-INF
+.DS_Store
