@@ -16,8 +16,6 @@
 
 package com.google.gwt.resources.gss;
 
-import java.util.List;
-
 import com.google.common.base.Objects;
 import com.google.common.css.compiler.ast.CssCompilerPass;
 import com.google.common.css.compiler.ast.CssCompositeValueNode;
@@ -32,6 +30,8 @@ import com.google.common.css.compiler.ast.CssValueNode;
 import com.google.common.css.compiler.ast.DefaultTreeVisitor;
 import com.google.common.css.compiler.ast.MutatingVisitController;
 import com.google.common.css.compiler.passes.BiDiFlipper;
+
+import java.util.List;
 
 public class RecordingBidiFlipper extends DefaultTreeVisitor implements CssCompilerPass {
 
