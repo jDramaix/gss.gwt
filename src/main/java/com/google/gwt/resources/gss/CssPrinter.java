@@ -27,6 +27,7 @@ import com.google.gwt.resources.gss.ast.CssJavaExpressionNode;
 public class CssPrinter extends CompactPrinter {
 
   private StringBuilder masterStringBuilder;
+  private String css;
 
   public CssPrinter(CssTree tree) {
     super(tree);
@@ -44,7 +45,7 @@ public class CssPrinter extends CompactPrinter {
 
   @Override
   public String getCompactPrintedString() {
-    return masterStringBuilder.toString();
+    return css;
   }
 
   @Override
@@ -57,7 +58,10 @@ public class CssPrinter extends CompactPrinter {
   @Override
   public void runPass() {
     masterStringBuilder = new StringBuilder();
+
     super.runPass();
+
+    css = masterStringBuilder.toString();
   }
 
   @Override
