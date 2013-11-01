@@ -25,9 +25,15 @@ import com.google.gwt.core.ext.Generator;
 import com.google.gwt.resources.gss.ast.CssJavaExpressionNode;
 
 public class CssPrinter extends CompactPrinter {
+  /**
+   * This value is used by {@link #concat} to help create a more balanced AST
+   * tree by producing parenthetical expressions.
+   */
+  private static final int CONCAT_EXPRESSION_LIMIT = 20;
 
   private StringBuilder masterStringBuilder;
   private String css;
+  private int concatenationNumber;
 
   public CssPrinter(CssTree tree) {
     super(tree);
@@ -39,7 +45,7 @@ public class CssPrinter extends CompactPrinter {
 
   @Override
   public boolean enterTree(CssRootNode root) {
-    masterStringBuilder.append("(\"");
+    masterStringBuilder.append("(");
     return super.enterTree(root);
   }
 
@@ -50,14 +56,14 @@ public class CssPrinter extends CompactPrinter {
 
   @Override
   public void leaveTree(CssRootNode root) {
-    String remaining = Generator.escape(sb.toString());
-    masterStringBuilder.append(remaining).append("\")");
+    masterStringBuilder.append(flushInternalStringBuilder()).append(")");
     super.leaveTree(root);
   }
 
   @Override
   public void runPass() {
     masterStringBuilder = new StringBuilder();
+    concatenationNumber = 0;
 
     super.runPass();
 
@@ -75,13 +81,35 @@ public class CssPrinter extends CompactPrinter {
   }
 
   private void concat(String stringToAppend) {
-    // read, escape and reset the internal StringBuilder
-    String before = Generator.escape(sb.toString());
+    masterStringBuilder.append(flushInternalStringBuilder());
+
+    appendConcatOperation();
+
+    masterStringBuilder.append(stringToAppend);
+
+    appendConcatOperation();
+  }
+
+  private void appendConcatOperation() {
+    // avoid long string concatenation chain
+    if (concatenationNumber >= CONCAT_EXPRESSION_LIMIT) {
+      masterStringBuilder.append(") + (");
+      concatenationNumber = 0;
+    } else {
+      masterStringBuilder.append(" + ");
+      concatenationNumber++;
+    }
+  }
+
+  /**
+   * Read what the internal StringBuilder used by the CompactPrinter has already built. Escape it.
+   * and reset the internal StringBuilder
+   * @return
+   */
+  private String flushInternalStringBuilder() {
+    String content = "\"" + Generator.escape(sb.toString()) + "\"";
     sb = new StringBuilder();
 
-    masterStringBuilder.append(before);
-    masterStringBuilder.append("\" + ");
-    masterStringBuilder.append(stringToAppend);
-    masterStringBuilder.append(" + \"");
+    return content;
   }
 }
