@@ -41,12 +41,10 @@ import com.google.common.css.compiler.passes.AbbreviatePositionalValues;
 import com.google.common.css.compiler.passes.CollectConstantDefinitions;
 import com.google.common.css.compiler.passes.CollectMixinDefinitions;
 import com.google.common.css.compiler.passes.ColorValueOptimizer;
-import com.google.common.css.compiler.passes.CompactPrinter;
 import com.google.common.css.compiler.passes.ConstantDefinitions;
 import com.google.common.css.compiler.passes.CreateComponentNodes;
 import com.google.common.css.compiler.passes.CreateConditionalNodes;
 import com.google.common.css.compiler.passes.CreateConstantReferences;
-import com.google.common.css.compiler.passes.CreateDefinitionNodes;
 import com.google.common.css.compiler.passes.CreateMixins;
 import com.google.common.css.compiler.passes.CreateStandardAtRuleNodes;
 import com.google.common.css.compiler.passes.CssClassRenaming;
@@ -91,6 +89,8 @@ import com.google.gwt.resources.ext.ClientBundleRequirements;
 import com.google.gwt.resources.ext.ResourceContext;
 import com.google.gwt.resources.ext.ResourceGeneratorUtil;
 import com.google.gwt.resources.ext.SupportsGeneratorResultCaching;
+import com.google.gwt.resources.gss.CreateEvalAndDefinitionNodes;
+import com.google.gwt.resources.gss.CssPrinter;
 import com.google.gwt.resources.gss.RecordingBidiFlipper;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.gwt.user.rebind.StringSourceWriter;
@@ -286,10 +286,10 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     if (recordingBidiFlipper.nodeFlipped()) {
       String reversed = printCssTree(cssTree);
-      return LocaleInfo.class.getName() + ".getCurrentLocale().isRTL() ? \""
-          + reversed + "\" : \"" + standard + "\"";
+      return LocaleInfo.class.getName() + ".getCurrentLocale().isRTL() ? "
+          + reversed + " : " + standard;
     } else {
-      return "\"" + standard + "\"";
+      return standard;
     }
   }
 
@@ -339,7 +339,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     new CreateStandardAtRuleNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
     new CreateMixins(cssTree.getMutatingVisitController(), errorManager).runPass();
-    new CreateDefinitionNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
+    new CreateEvalAndDefinitionNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
     new CreateConstantReferences(cssTree.getMutatingVisitController()).runPass();
     new CreateConditionalNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
     new CreateComponentNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
@@ -457,10 +457,10 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   }
 
   private String printCssTree(CssTree tree) {
-    CompactPrinter compactPrinterPass = new CompactPrinter(tree);
-    compactPrinterPass.runPass();
+    CssPrinter cssPrinterPass = new CssPrinter(tree);
+    cssPrinterPass.runPass();
 
-    return Generator.escape(compactPrinterPass.getCompactPrintedString());
+    return cssPrinterPass.getCompactPrintedString();
   }
 
   private boolean writeClassMethod(TreeLogger logger, ResourceContext context, JMethod userMethod,
