@@ -36,7 +36,6 @@ import com.google.common.css.compiler.ast.GssError;
 import com.google.common.css.compiler.ast.GssFunction;
 import com.google.common.css.compiler.ast.GssParser;
 import com.google.common.css.compiler.ast.GssParserException;
-import com.google.common.css.compiler.gssfunctions.DefaultGssFunctionMapProvider;
 import com.google.common.css.compiler.passes.AbbreviatePositionalValues;
 import com.google.common.css.compiler.passes.CollectConstantDefinitions;
 import com.google.common.css.compiler.passes.CollectMixinDefinitions;
@@ -45,6 +44,7 @@ import com.google.common.css.compiler.passes.ConstantDefinitions;
 import com.google.common.css.compiler.passes.CreateComponentNodes;
 import com.google.common.css.compiler.passes.CreateConditionalNodes;
 import com.google.common.css.compiler.passes.CreateConstantReferences;
+import com.google.common.css.compiler.passes.CreateDefinitionNodes;
 import com.google.common.css.compiler.passes.CreateMixins;
 import com.google.common.css.compiler.passes.CreateStandardAtRuleNodes;
 import com.google.common.css.compiler.passes.CssClassRenaming;
@@ -89,8 +89,8 @@ import com.google.gwt.resources.ext.ClientBundleRequirements;
 import com.google.gwt.resources.ext.ResourceContext;
 import com.google.gwt.resources.ext.ResourceGeneratorUtil;
 import com.google.gwt.resources.ext.SupportsGeneratorResultCaching;
-import com.google.gwt.resources.gss.CreateEvalAndDefinitionNodes;
 import com.google.gwt.resources.gss.CssPrinter;
+import com.google.gwt.resources.gss.GwtGssFunctionMapProvider;
 import com.google.gwt.resources.gss.RecordingBidiFlipper;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.gwt.user.rebind.StringSourceWriter;
@@ -339,7 +339,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     new CreateStandardAtRuleNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
     new CreateMixins(cssTree.getMutatingVisitController(), errorManager).runPass();
-    new CreateEvalAndDefinitionNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
+    new CreateDefinitionNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
     new CreateConstantReferences(cssTree.getMutatingVisitController()).runPass();
     new CreateConditionalNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
     new CreateComponentNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
@@ -382,8 +382,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
         collectConstantDefinitionsPass.getConstantDefinitions(), true, errorManager, false);
     replaceConstantReferences.runPass();
 
-    // TODO : we can add custom function here
-    Map<String, GssFunction> gssFunctionMap = new DefaultGssFunctionMapProvider().get();
+    Map<String, GssFunction> gssFunctionMap = new GwtGssFunctionMapProvider().get();
     new ResolveCustomFunctionNodes(cssTree.getMutatingVisitController(), errorManager,
         gssFunctionMap, true, allowedNonStandardFunctions).runPass();
 
