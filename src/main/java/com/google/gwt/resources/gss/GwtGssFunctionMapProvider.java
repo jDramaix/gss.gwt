@@ -29,7 +29,8 @@ public class GwtGssFunctionMapProvider extends DefaultGssFunctionMapProvider {
 
     return ImmutableMap.<String, GssFunction>builder().putAll(gssFunction)
         // TODO add a namespace for specific gwt function ?
-        .put("eval", new EvalFunction())
+        .put(EvalFunction.getName(), new EvalFunction())
+        .put(ValueFunction.getName(), new ValueFunction())
         .build();
   }
 }
