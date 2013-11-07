@@ -141,7 +141,6 @@ public class ImageSpriteCreator extends DefaultTreeVisitor implements CssCompile
 
     String imageResource = valuesNodes.get(0).getValue();
 
-
     JMethod imageMethod;
     try {
       imageMethod = ResourceGeneratorUtil.getMethodByPath(context.getClientBundleType(),
