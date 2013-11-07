@@ -34,18 +34,23 @@ public class ValueFunction implements GssFunction {
   @Override
   public List<CssValueNode> getCallResultNodes(List<CssValueNode> args, ErrorManager errorManager)
       throws GssFunctionException {
-    if (args.size() == 0 || args.size() > 2) {
-      throw new GssFunctionException(getName() + " function take one or two arguments");
+    if (args.size() == 0 || args.size() > 3) {
+      throw new GssFunctionException(getName() + " function take one, two or three arguments");
     }
 
     String functionPath = args.get(0).getValue();
+    String prefix = null;
     String suffix = null;
 
-    if (args.size() == 2) {
+    if (args.size() > 1) {
       suffix = args.get(1).getValue();
     }
 
-    CssDotPathNode cssDotPathNode = new CssDotPathNode(functionPath, suffix);
+    if (args.size() > 2) {
+      prefix = args.get(2).getValue();
+    }
+
+    CssDotPathNode cssDotPathNode = new CssDotPathNode(functionPath, prefix, suffix);
 
     // TODO add validation : maybe add a compilation pass that will validate the the method exist
     // on the resource bundle
@@ -57,12 +62,18 @@ public class ValueFunction implements GssFunction {
   public String getCallResultString(List<String> args) throws GssFunctionException {
 
     String functionPath = args.get(0);
+    String prefix = null;
     String suffix = null;
 
-    if (args.size() == 2) {
+    if (args.size() > 1) {
       suffix = args.get(1);
     }
-    return CssDotPathNode.resolveExpression(functionPath, suffix);
+
+    if (args.size() > 2) {
+      prefix = args.get(2);
+    }
+
+    return CssDotPathNode.resolveExpression(functionPath, prefix, suffix);
   }
 
   @Override
