@@ -91,6 +91,7 @@ import com.google.gwt.resources.ext.ResourceGeneratorUtil;
 import com.google.gwt.resources.ext.SupportsGeneratorResultCaching;
 import com.google.gwt.resources.gss.CssPrinter;
 import com.google.gwt.resources.gss.GwtGssFunctionMapProvider;
+import com.google.gwt.resources.gss.ImageSpriteCreator;
 import com.google.gwt.resources.gss.RecordingBidiFlipper;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.gwt.user.rebind.StringSourceWriter;
@@ -169,7 +170,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     // TODO : Should we foresee configuration properties for simplyfyCss and eliminateDeadCode
     // booleans ?
-    ConstantDefinitions constantDefinitions = optimize(cssTree, true, true);
+    ConstantDefinitions constantDefinitions = optimize(cssTree, context, true, true);
 
     checkErrors();
 
@@ -359,8 +360,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
   }
 
-  private ConstantDefinitions optimize(CssTree cssTree, boolean simplifyCss,
-      boolean eliminateDeadStyles) {
+  private ConstantDefinitions optimize(CssTree cssTree, ResourceContext context,
+      boolean simplifyCss,  boolean eliminateDeadStyles) {
     // Collect mixin definitions and replace mixins
     CollectMixinDefinitions collectMixinDefinitions = new CollectMixinDefinitions(
         cssTree.getMutatingVisitController(), errorManager);
@@ -385,6 +386,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     Map<String, GssFunction> gssFunctionMap = new GwtGssFunctionMapProvider().get();
     new ResolveCustomFunctionNodes(cssTree.getMutatingVisitController(), errorManager,
         gssFunctionMap, true, allowedNonStandardFunctions).runPass();
+
+    new ImageSpriteCreator(cssTree.getMutatingVisitController(), context, errorManager).runPass();
 
     if (simplifyCss) {
       // Eliminate empty rules.

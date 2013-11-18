@@ -21,7 +21,7 @@
         <target.jdk>1.6</target.jdk>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <gwt.version>2.6.0-SNAPSHOT</gwt.version>
+        <gwt.version>2.6.0-rc1</gwt.version>
         <guava.version>15.0</guava.version>
         <closure.version>v20131127</closure.version>
     </properties>
@@ -30,16 +30,6 @@
         <repository>
             <id>site</id>
             <url>http://gwtquery.googlecode.com/svn/mavenrepo</url>
-        </repository>
-        <repository>
-            <id>gwt-sonatype-snapshots</id>
-            <url>https://oss.sonatype.org/content/repositories/google-snapshots</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
         </repository>
     </repositories>
 
