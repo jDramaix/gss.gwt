@@ -22,6 +22,7 @@ import com.google.common.css.compiler.ast.CssTree;
 import com.google.common.css.compiler.ast.CssValueNode;
 import com.google.common.css.compiler.passes.CompactPrinter;
 import com.google.gwt.core.ext.Generator;
+import com.google.gwt.resources.gss.ast.CssDotPathNode;
 import com.google.gwt.resources.gss.ast.CssJavaExpressionNode;
 
 public class CssPrinter extends CompactPrinter {
@@ -72,9 +73,8 @@ public class CssPrinter extends CompactPrinter {
 
   @Override
   protected void appendValueNode(CssValueNode node) {
-    if (node instanceof CssJavaExpressionNode) {
-      CssJavaExpressionNode javaExpressionNode = (CssJavaExpressionNode) node;
-      concat("String.valueOf(" + javaExpressionNode.getValue() + ")");
+    if (node instanceof CssJavaExpressionNode || node instanceof CssDotPathNode) {
+      concat(node.getValue());
     } else {
       super.appendValueNode(node);
     }
