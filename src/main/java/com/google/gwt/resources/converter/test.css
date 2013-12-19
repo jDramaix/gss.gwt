@@ -1,0 +1,43 @@
+@def small 1px;
+@def black #000;
+@eval userBackground com.module.UserPreferences.getUserBackground();
+@def SPRITE_WIDTH value('imageResource.getWidth', 'px');
+
+.selector {
+    width: SPRITE_WIDTH;
+    height: 50px;
+}
+
+
+.className {
+    border: small solid black;
+    color: black;
+}
+
+div {
+    background: userBackground;
+}
+
+
+span {
+    offset-left: value('imageResource.getWidth', 'px');
+}
+
+
+@sprite .mySpriteClass {
+    gwt-image: "imageAccessor";
+    width: 50px;
+}
+
+@noflip {
+    .selector {
+        left: 10;
+    }
+}
+
+
+.blop {
+    width: 15px;
+    height: 15px;
+
+}
