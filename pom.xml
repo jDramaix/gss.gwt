@@ -21,7 +21,7 @@
         <target.jdk>1.6</target.jdk>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <gwt.version>2.6.0-rc1</gwt.version>
+        <gwt.version>2.6.0-rc3</gwt.version>
         <guava.version>15.0</guava.version>
         <closure.version>v20131127</closure.version>
     </properties>
@@ -38,14 +38,12 @@
             <groupId>com.google.gwt</groupId>
             <artifactId>gwt-user</artifactId>
             <version>${gwt.version}</version>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>com.google.gwt</groupId>
             <artifactId>gwt-dev</artifactId>
             <version>${gwt.version}</version>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -65,7 +63,16 @@
             <artifactId>closure-stylesheets</artifactId>
             <version>${closure.version}</version>
         </dependency>
+
+
     </dependencies>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>synergian-repo</id>
+            <url>https://raw.github.com/synergian/wagon-git/releases</url>
+        </pluginRepository>
+    </pluginRepositories>
 
     <build>
         <resources>
@@ -76,5 +83,25 @@
                 <directory>${basedir}/src/main/resources</directory>
             </resource>
         </resources>
+        <extensions>
+            <extension>
+                <groupId>org.jvnet.wagon-svn</groupId>
+                <artifactId>wagon-svn</artifactId>
+                <version>1.8</version>
+            </extension>
+        </extensions>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>googlecode</id>
+            <url>svn:https://gwtquery-plugins.googlecode.com/svn/mavenrepo/</url>
+        </repository>
+        <snapshotRepository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>googlecode</id>
+            <url>svn:https://gwtquery-plugins.googlecode.com/svn/mavenrepo/</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>

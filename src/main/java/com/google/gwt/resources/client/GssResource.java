@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 GWT project.
+ * Copyright 2013 Julien Dramaix.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -22,20 +22,5 @@ import com.google.gwt.resources.rg.GssResourceGenerator;
 
 @DefaultExtensions(value = {".gss"})
 @ResourceGeneratorType(GssResourceGenerator.class)
-public interface GssResource extends ResourcePrototype {
-
-  /**
-   * Calls
-   * {@link com.google.gwt.dom.client.StyleInjector#injectStylesheet(String)} to
-   * inject the contents of the GssResource into the DOM. Repeated calls to this
-   * method on an instance of a GssResource will have no effect.
-   *
-   * @return <code>true</code> if this method mutated the DOM.
-   */
-  boolean ensureInjected();
-
-  /**
-   * Provides the contents of the GssResource.
-   */
-  String getText();
+public interface GssResource extends CssResource {
 }

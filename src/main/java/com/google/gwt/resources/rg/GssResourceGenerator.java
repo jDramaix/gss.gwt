@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 GWT project.
+ * Copyright 2013 Julien Dramaix.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -21,6 +21,8 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicates;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.css.IdentitySubstitutionMap;
 import com.google.common.css.MinimalSubstitutionMap;
 import com.google.common.css.PrefixingSubstitutionMap;
@@ -79,17 +81,16 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.util.collect.IdentityHashMap;
-import com.google.gwt.dev.util.collect.Lists;
-import com.google.gwt.dev.util.collect.Sets;
 import com.google.gwt.i18n.client.LocaleInfo;
+import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.resources.client.CssResource.ClassName;
-import com.google.gwt.resources.client.GssResource;
 import com.google.gwt.resources.client.ResourcePrototype;
 import com.google.gwt.resources.ext.ClientBundleRequirements;
 import com.google.gwt.resources.ext.ResourceContext;
 import com.google.gwt.resources.ext.ResourceGeneratorUtil;
 import com.google.gwt.resources.ext.SupportsGeneratorResultCaching;
 import com.google.gwt.resources.gss.CssPrinter;
+import com.google.gwt.resources.gss.ExternalClassesCollector;
 import com.google.gwt.resources.gss.GwtGssFunctionMapProvider;
 import com.google.gwt.resources.gss.ImageSpriteCreator;
 import com.google.gwt.resources.gss.RecordingBidiFlipper;
@@ -142,6 +143,18 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       logger.log(Type.WARN, warning.getMessage());
     }
   }
+
+  // TODO rename this class
+  private static class OptimizationInfo {
+    ConstantDefinitions constantDefinitions;
+    Set<String> externalClasses;
+
+    private OptimizationInfo(ConstantDefinitions constantDefinitions, Set<String> externalClasses) {
+      this.constantDefinitions = constantDefinitions;
+      this.externalClasses = externalClasses;
+    }
+  }
+
   private static final Cache<List<URL>, CssTree> TREE_CACHE = CacheBuilder.newBuilder()
       .softValues().build();
   private static final Cache<List<URL>, Long> LAST_MODIFIED_CACHE = CacheBuilder.newBuilder()
@@ -162,6 +175,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   private JMethod getNameMethod;
   // TODO for the time being we just support one mode of class name obfuscation. boolean is enough
   private boolean obfuscateClassName;
+  // TODO add the possiblity to the developper to define his own at-rule ?
+  private Set<String> allowedAtRules;
 
   @Override
   public String createAssignment(TreeLogger logger, ResourceContext context, JMethod method)
@@ -170,18 +185,19 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     // TODO : Should we foresee configuration properties for simplyfyCss and eliminateDeadCode
     // booleans ?
-    ConstantDefinitions constantDefinitions = optimize(cssTree, context, true, true);
+    OptimizationInfo optimizationInfo = optimize(cssTree, context, true, true);
 
     checkErrors();
 
     // TODO check if this can be done earlier (in the prepare method) ?
-    Map<String, String> substitutionMap = doClassRenaming(cssTree, method);
+    Map<String, String> substitutionMap = doClassRenaming(cssTree, method,
+        optimizationInfo.externalClasses);
 
     SourceWriter sw = new StringSourceWriter();
     sw.println("new " + method.getReturnType().getQualifiedSourceName() + "() {");
     sw.indent();
 
-    writeMethods(logger, context, method, sw, constantDefinitions, substitutionMap);
+    writeMethods(logger, context, method, sw, optimizationInfo, substitutionMap);
 
     sw.outdent();
     sw.println("}");
@@ -195,7 +211,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     errorManager = new LoggerErrorManager(logger);
     // TODO : add ability to developpers to add non standard functions
     // (like "progid:DXImageTransform.Microsoft.gradient") via configuration property
-    allowedNonStandardFunctions = Sets.create();
+    allowedNonStandardFunctions = Sets.newHashSet();
+    allowedAtRules = Sets.newHashSet(ExternalClassesCollector.EXTERNAL_AT_RULE);
 
     try {
       PropertyOracle propertyOracle = context.getGeneratorContext().getPropertyOracle();
@@ -211,16 +228,16 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
 
     TypeOracle typeOracle = context.getGeneratorContext().getTypeOracle();
-    JClassType gssResourceInterface = typeOracle.findType(GssResource.class.getCanonicalName());
+    JClassType cssResourceInterface = typeOracle.findType(CssResource.class.getCanonicalName());
     JClassType resourcePrototypeInterface = typeOracle.findType(ResourcePrototype.class
         .getCanonicalName());
 
     try {
-      getTextMethod = gssResourceInterface.getMethod("getText", new JType[0]);
-      ensuredInjectedMethod = gssResourceInterface.getMethod("ensureInjected", new JType[0]);
+      getTextMethod = cssResourceInterface.getMethod("getText", new JType[0]);
+      ensuredInjectedMethod = cssResourceInterface.getMethod("ensureInjected", new JType[0]);
       getNameMethod = resourcePrototypeInterface.getMethod("getName", new JType[0]);
     } catch (NotFoundException e) {
-      logger.log(TreeLogger.ERROR, "Unable to lookup methods from GssResource and " +
+      logger.log(TreeLogger.ERROR, "Unable to lookup methods from CssResource and " +
           "ResourcePrototype interface", e);
       throw new UnableToCompleteException();
     }
@@ -242,7 +259,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
 
     final long lastModified = ResourceGeneratorUtil.getLastModified(resourceUrls, logger);
-    final List<URL> resources = Lists.create(resourceUrls);
+    final List<URL> resources = Lists.newArrayList(resourceUrls);
 
     maybeInvalidateCacheFor(resources, lastModified, logger);
 
@@ -268,7 +285,6 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
 
     // todo add permutations axis in requirements
-
     cssTreeMap.put(method, deepCopy(tree));
   }
 
@@ -304,7 +320,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     return new CssTree(cssTree.getSourceCode(), cssTree.getRoot().deepCopy());
   }
 
-  private Map<String, String> doClassRenaming(CssTree cssTree, JMethod method) {
+  private Map<String, String> doClassRenaming(CssTree cssTree, JMethod method,
+      Set<String> externalClasses) {
     // for the time being, either we don 't rename the classes either we obfuscate them
     // we can (and should) implement our own SubstitutionMap to handle another obfuscation scheme
     SubstitutionMap substitutionMap;
@@ -324,9 +341,9 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     SubstitutionMap prefixingSubstitutionMap = new PrefixingSubstitutionMap(substitutionMap,
         resourcePrefix + "-");
 
-    // TODO : we can build a Predicates that exclude some classes to be renamed (@external)
     RecordingSubstitutionMap recordingSubstitutionMap =
-        new RecordingSubstitutionMap(prefixingSubstitutionMap, Predicates.alwaysTrue());
+        new RecordingSubstitutionMap(prefixingSubstitutionMap,
+            Predicates.not(Predicates.in(externalClasses)));
 
     new CssClassRenaming(cssTree.getMutatingVisitController(), recordingSubstitutionMap, null)
         .runPass();
@@ -345,8 +362,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     new CreateConditionalNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
     new CreateComponentNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
 
-    new HandleUnknownAtRuleNodes(cssTree.getMutatingVisitController(), errorManager, true, false)
-        .runPass();
+    new HandleUnknownAtRuleNodes(cssTree.getMutatingVisitController(), errorManager,
+        allowedAtRules, true, false).runPass();
     new ProcessKeyframes(cssTree.getMutatingVisitController(), errorManager, true, true).runPass();
     new ProcessRefiners(cssTree.getMutatingVisitController(), errorManager, true).runPass();
   }
@@ -360,7 +377,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
   }
 
-  private ConstantDefinitions optimize(CssTree cssTree, ResourceContext context,
+  private OptimizationInfo optimize(CssTree cssTree, ResourceContext context,
       boolean simplifyCss,  boolean eliminateDeadStyles) {
     // Collect mixin definitions and replace mixins
     CollectMixinDefinitions collectMixinDefinitions = new CollectMixinDefinitions(
@@ -369,11 +386,15 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     new ReplaceMixins(cssTree.getMutatingVisitController(), errorManager,
         collectMixinDefinitions.getDefinitions()).runPass();
 
+    ExternalClassesCollector externalClassesCollector = new ExternalClassesCollector(cssTree
+        .getMutatingVisitController(), errorManager);
+    externalClassesCollector.runPass();
+
     new ProcessComponents<Object>(cssTree.getMutatingVisitController(), errorManager).runPass();
 
     // TODO pass true conditions
     new EliminateConditionalNodes(cssTree.getMutatingVisitController(),
-        Sets.<String>create()).runPass();
+        Sets.<String>newHashSet()).runPass();
 
     CollectConstantDefinitions collectConstantDefinitionsPass = new CollectConstantDefinitions(
         cssTree);
@@ -416,7 +437,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       new EliminateUselessRulesetNodes(cssTree).runPass();
     }
 
-    return collectConstantDefinitionsPass.getConstantDefinitions();
+    return new OptimizationInfo(collectConstantDefinitionsPass.getConstantDefinitions(),
+        externalClassesCollector.getExternalClassNames());
   }
 
   private CssTree parseResources(List<URL> resources, TreeLogger logger)
@@ -466,7 +488,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   }
 
   private boolean writeClassMethod(TreeLogger logger, ResourceContext context, JMethod userMethod,
-      Map<String, String> substitutionMap, SourceWriter sw) throws UnableToCompleteException {
+      Map<String, String> substitutionMap, Set<String> externalClasses, SourceWriter sw) throws
+      UnableToCompleteException {
 
     if (!isReturnTypeString(userMethod.getReturnType().isClass())) {
       logger.log(Type.ERROR, "The return type of the method [" + userMethod.getName() + "] must " +
@@ -488,6 +511,11 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
 
     String value = substitutionMap.get(name);
+
+    // external class ?
+    if (value == null && externalClasses.contains(name)) {
+      value = name;
+    }
 
     if (value == null) {
       logger.log(Type.ERROR, "The following style class [" + name + "] is missing from the source" +
@@ -556,7 +584,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   }
 
   private void writeMethods(TreeLogger logger, ResourceContext context, JMethod method,
-      SourceWriter sw, ConstantDefinitions constantDefinitions, Map<String, String> substitutionMap)
+      SourceWriter sw, OptimizationInfo optimizationInfo, Map<String, String> substitutionMap)
       throws UnableToCompleteException {
     JClassType gssResource = method.getReturnType().isInterface();
 
@@ -570,7 +598,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       } else if (toImplement == getNameMethod) {
         writeGetName(method, sw);
       } else {
-        success &= writeUserMethod(logger, context, toImplement, sw, constantDefinitions,
+        success &= writeUserMethod(logger, context, toImplement, sw, optimizationInfo,
             substitutionMap);
       }
     }
@@ -581,16 +609,17 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   }
 
   private boolean writeUserMethod(TreeLogger logger, ResourceContext context, JMethod userMethod,
-      SourceWriter sw, ConstantDefinitions constantDefinitions, Map<String, String> substitutionMap)
+      SourceWriter sw, OptimizationInfo optimizationInfo, Map<String, String> substitutionMap)
       throws UnableToCompleteException {
 
-    CssDefinitionNode definitionNode = constantDefinitions.getConstantDefinition(userMethod
-        .getName());
+    ConstantDefinitions constantDefinitions = optimizationInfo.constantDefinitions;
+    CssDefinitionNode definitionNode = constantDefinitions.getConstantDefinition(userMethod.getName());
 
     if (definitionNode != null) {
       return writeDefMethod(definitionNode, logger, context, userMethod, sw);
     }
 
-    return writeClassMethod(logger, context, userMethod, substitutionMap, sw);
+    return writeClassMethod(logger, context, userMethod, substitutionMap,
+        optimizationInfo.externalClasses, sw);
   }
 }
