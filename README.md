@@ -113,9 +113,39 @@ Label l = new Label("My animated label");
 l.addStyleName(style.animate());
 ```
 
-Dependency
+How to install it
 ----------
-- Google closure stylesheet built from source : https://code.google.com/p/closure-stylesheets/wiki/BuildingFromSource
-- Google web toolkit built from trunk with this change : https://gwt-review.googlesource.com/#/c/4950/
-- Google Guava 12+
+###GWT
+GssResource works only with GWT 2.6. 
 
+### Maven
+just include these blocks in your pom.xml :
+```xml
+  <repositories>
+      <!-- ... -->
+      
+      <repository>
+          <id>gss.temp</id>
+          <url>http://gwtquery.googlecode.com/svn/mavenrepo</url>
+      </repository>
+  </repositories>
+  
+  <dependencies>
+     <!-- ... -->
+   
+     <dependency>
+        <groupId>com.google.gwt</groupId>
+        <artifactId>gssresource</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <scope>provided</scope>
+    </dependency>
+  </dependencies>
+  
+```
+For the time being, we are using a temporary repository to deploy the snapshot but we'll deploy on sonatype asap.
+
+###Manually
+Download the following jar files and put them in your compilation classpath : 
+* [gssresource.jar](https://gwtquery-plugins.googlecode.com/svn/mavenrepo/com/google/gwt/gssresource/1.0-SNAPSHOT/gssresource-1.0-20131219.102520-2.jar)
+* [closure-stylesheet.jar](http://gwtquery-plugins.googlecode.com/svn/mavenrepo/com/google/closure-stylesheets/closure-stylesheets/v20131127/closure-stylesheets-v20131127.jar)
+* [guava 12+](http://repo1.maven.org/maven2/com/google/guava/guava/15.0/guava-15.0.jar)
