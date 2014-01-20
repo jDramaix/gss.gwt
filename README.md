@@ -123,10 +123,12 @@ just include these blocks in your pom.xml :
 ```xml
   <repositories>
       <!-- ... -->
-      
-      <repository>
-          <id>gss.temp</id>
-          <url>http://gwtquery.googlecode.com/svn/mavenrepo</url>
+      <repository> 
+        <id>gss.temp</id> 
+        <url>http://gwtquery-plugins.googlecode.com/svn/mavenrepo</url>
+        <snapshots>
+          <enabled>true</enabled>
+        </snapshots>
       </repository>
   </repositories>
   
