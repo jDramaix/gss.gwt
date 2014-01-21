@@ -31,6 +31,10 @@
             <id>site</id>
             <url>http://gwtquery.googlecode.com/svn/mavenrepo</url>
         </repository>
+        <repository>
+            <id>gwtquery-plugins</id>
+            <url>http://gwtquery-plugins.googlecode.com/svn/mavenrepo</url>
+        </repository>
     </repositories>
 
     <dependencies>
