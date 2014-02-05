@@ -66,7 +66,7 @@ import com.google.common.css.compiler.passes.ProcessRefiners;
 import com.google.common.css.compiler.passes.ReplaceConstantReferences;
 import com.google.common.css.compiler.passes.ReplaceMixins;
 import com.google.common.css.compiler.passes.SplitRulesetNodes;
-import com.google.common.io.Files;
+import com.google.common.io.Resources;
 import com.google.gwt.core.ext.BadPropertyValueException;
 import com.google.gwt.core.ext.ConfigurationProperty;
 import com.google.gwt.core.ext.Generator;
@@ -98,9 +98,7 @@ import com.google.gwt.resources.gss.RecordingBidiFlipper;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.gwt.user.rebind.StringSourceWriter;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -509,15 +507,13 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
           "Parsing GSS stylesheet " + stylesheet.toExternalForm());
 
       try {
-        File file = new File(stylesheet.toURI());
         // TODO : always use UTF-8 to read the file ?
-        String fileContent = Files.toString(file, Charsets.UTF_8);
-        sourceCodes.add(new SourceCode(file.getName(), fileContent));
+        String fileContent = Resources.asByteSource(stylesheet).asCharSource(Charsets.UTF_8)
+            .read();
+        sourceCodes.add(new SourceCode(stylesheet.getFile(), fileContent));
         continue;
 
       } catch (IOException e) {
-        branchLogger.log(TreeLogger.ERROR, "Unable to parse CSS", e);
-      } catch (URISyntaxException e) {
         branchLogger.log(TreeLogger.ERROR, "Unable to parse CSS", e);
       }
       throw new UnableToCompleteException();
