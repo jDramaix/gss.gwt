@@ -21,6 +21,8 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicates;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.css.IdentitySubstitutionMap;
@@ -35,7 +37,6 @@ import com.google.common.css.compiler.ast.CssTree;
 import com.google.common.css.compiler.ast.CssValueNode;
 import com.google.common.css.compiler.ast.ErrorManager;
 import com.google.common.css.compiler.ast.GssError;
-import com.google.common.css.compiler.ast.GssFunction;
 import com.google.common.css.compiler.ast.GssParser;
 import com.google.common.css.compiler.ast.GssParserException;
 import com.google.common.css.compiler.passes.AbbreviatePositionalValues;
@@ -64,13 +65,13 @@ import com.google.common.css.compiler.passes.ProcessKeyframes;
 import com.google.common.css.compiler.passes.ProcessRefiners;
 import com.google.common.css.compiler.passes.ReplaceConstantReferences;
 import com.google.common.css.compiler.passes.ReplaceMixins;
-import com.google.common.css.compiler.passes.ResolveCustomFunctionNodes;
 import com.google.common.css.compiler.passes.SplitRulesetNodes;
-import com.google.common.io.Files;
+import com.google.common.io.Resources;
 import com.google.gwt.core.ext.BadPropertyValueException;
 import com.google.gwt.core.ext.ConfigurationProperty;
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.PropertyOracle;
+import com.google.gwt.core.ext.SelectionProperty;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -91,15 +92,13 @@ import com.google.gwt.resources.ext.ResourceGeneratorUtil;
 import com.google.gwt.resources.ext.SupportsGeneratorResultCaching;
 import com.google.gwt.resources.gss.CssPrinter;
 import com.google.gwt.resources.gss.ExternalClassesCollector;
-import com.google.gwt.resources.gss.GwtGssFunctionMapProvider;
 import com.google.gwt.resources.gss.ImageSpriteCreator;
+import com.google.gwt.resources.gss.PermutationsCollector;
 import com.google.gwt.resources.gss.RecordingBidiFlipper;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.gwt.user.rebind.StringSourceWriter;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -146,8 +145,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
   // TODO rename this class
   private static class OptimizationInfo {
-    ConstantDefinitions constantDefinitions;
-    Set<String> externalClasses;
+    final ConstantDefinitions constantDefinitions;
+    final Set<String> externalClasses;
 
     private OptimizationInfo(ConstantDefinitions constantDefinitions, Set<String> externalClasses) {
       this.constantDefinitions = constantDefinitions;
@@ -155,7 +154,25 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
   }
 
-  private static final Cache<List<URL>, CssTree> TREE_CACHE = CacheBuilder.newBuilder()
+  private static class ExtendedCssTree {
+    private final CssTree tree;
+    private final List<String> permutationAxes;
+
+    private ExtendedCssTree(CssTree tree, List<String> permutationAxis) {
+      this.tree = tree;
+      this.permutationAxes = permutationAxis;
+    }
+
+    public CssTree getCssTree() {
+      return tree;
+    }
+
+    public List<String> getPermutationAxes() {
+      return permutationAxes;
+    }
+  }
+
+  private static final Cache<List<URL>, ExtendedCssTree> TREE_CACHE = CacheBuilder.newBuilder()
       .softValues().build();
   private static final Cache<List<URL>, Long> LAST_MODIFIED_CACHE = CacheBuilder.newBuilder()
       .build();
@@ -167,7 +184,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   private static final SubstitutionMap resourcePrefixBuilder = new MinimalSubstitutionMap();
   // TODO maybe define our own property ?
   private static final String KEY_STYLE = "CssResource.style";
-  private Map<JMethod, CssTree> cssTreeMap;
+  private Map<JMethod, ExtendedCssTree> cssTreeMap;
   private Set<String> allowedNonStandardFunctions;
   private LoggerErrorManager errorManager;
   private JMethod getTextMethod;
@@ -181,16 +198,16 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   @Override
   public String createAssignment(TreeLogger logger, ResourceContext context, JMethod method)
       throws UnableToCompleteException {
-    CssTree cssTree = cssTreeMap.get(method);
+    ExtendedCssTree extendedCssTree = cssTreeMap.get(method);
 
     // TODO : Should we foresee configuration properties for simplyfyCss and eliminateDeadCode
     // booleans ?
-    OptimizationInfo optimizationInfo = optimize(cssTree, context, true, true);
+    OptimizationInfo optimizationInfo = optimize(extendedCssTree, context, true, true);
 
     checkErrors();
 
     // TODO check if this can be done earlier (in the prepare method) ?
-    Map<String, String> substitutionMap = doClassRenaming(cssTree, method,
+    Map<String, String> substitutionMap = doClassRenaming(extendedCssTree.getCssTree(), method,
         optimizationInfo.externalClasses);
 
     SourceWriter sw = new StringSourceWriter();
@@ -207,7 +224,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
   @Override
   public void init(TreeLogger logger, ResourceContext context) throws UnableToCompleteException {
-    cssTreeMap = new IdentityHashMap<JMethod, CssTree>();
+    cssTreeMap = new IdentityHashMap<JMethod, ExtendedCssTree>();
     errorManager = new LoggerErrorManager(logger);
     // TODO : add ability to developpers to add non standard functions
     // (like "progid:DXImageTransform.Microsoft.gradient") via configuration property
@@ -244,7 +261,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   }
 
   @Override
-  public void prepare(final TreeLogger logger, ResourceContext context,
+  public void prepare(final TreeLogger logger, final ResourceContext context,
       ClientBundleRequirements requirements, JMethod method) throws UnableToCompleteException {
 
     if (method.getReturnType().isInterface() == null) {
@@ -263,13 +280,13 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     maybeInvalidateCacheFor(resources, lastModified, logger);
 
-    CssTree tree;
+    ExtendedCssTree extTree;
 
     try {
-      tree = TREE_CACHE.get(resources, new Callable<CssTree>() {
+      extTree = TREE_CACHE.get(resources, new Callable<ExtendedCssTree>() {
         @Override
-        public CssTree call() throws Exception {
-          CssTree tree = parseResources(resources, logger);
+        public ExtendedCssTree call() throws Exception {
+          ExtendedCssTree tree = parseResources(resources, logger);
           // add last modified time in cache
           LAST_MODIFIED_CACHE.put(resources, lastModified);
           return tree;
@@ -284,14 +301,24 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       }
     }
 
-    // todo add permutations axis in requirements
-    cssTreeMap.put(method, deepCopy(tree));
+    ExtendedCssTree finalTree = new ExtendedCssTree(deepCopy(extTree.getCssTree()),
+        extTree.getPermutationAxes());
+    cssTreeMap.put(method, finalTree);
+
+    for (String permutationAxis : extTree.getPermutationAxes()) {
+      try {
+        context.getRequirements().addPermutationAxis(permutationAxis);
+      } catch (BadPropertyValueException e) {
+        logger.log(TreeLogger.ERROR, "Unknown deferred-binding property " + permutationAxis, e);
+        throw new UnableToCompleteException();
+      }
+    }
   }
 
   @Override
   protected String getCssExpression(TreeLogger logger, ResourceContext context,
       JMethod method) throws UnableToCompleteException {
-    CssTree cssTree = cssTreeMap.get(method);
+    CssTree cssTree = cssTreeMap.get(method).getCssTree();
 
     String standard = printCssTree(cssTree);
 
@@ -351,7 +378,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     return recordingSubstitutionMap.getMappings();
   }
 
-  private void finalizeTree(CssTree cssTree) {
+  private List<String> finalizeTree(CssTree cssTree) {
     //TODO
     // new CheckDependencyNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
 
@@ -366,6 +393,12 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
         allowedAtRules, true, false).runPass();
     new ProcessKeyframes(cssTree.getMutatingVisitController(), errorManager, true, true).runPass();
     new ProcessRefiners(cssTree.getMutatingVisitController(), errorManager, true).runPass();
+
+    PermutationsCollector permutationsCollector = new PermutationsCollector(cssTree
+        .getMutatingVisitController(), errorManager);
+    permutationsCollector.runPass();
+
+    return permutationsCollector.getPermutationAxes();
   }
 
   private void maybeInvalidateCacheFor(List<URL> resources, long lastModified, TreeLogger logger) {
@@ -377,8 +410,10 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
   }
 
-  private OptimizationInfo optimize(CssTree cssTree, ResourceContext context,
+  private OptimizationInfo optimize(ExtendedCssTree extendedCssTree, ResourceContext context,
       boolean simplifyCss,  boolean eliminateDeadStyles) {
+    CssTree cssTree = extendedCssTree.getCssTree();
+
     // Collect mixin definitions and replace mixins
     CollectMixinDefinitions collectMixinDefinitions = new CollectMixinDefinitions(
         cssTree.getMutatingVisitController(), errorManager);
@@ -392,9 +427,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     new ProcessComponents<Object>(cssTree.getMutatingVisitController(), errorManager).runPass();
 
-    // TODO pass true conditions
     new EliminateConditionalNodes(cssTree.getMutatingVisitController(),
-        Sets.<String>newHashSet()).runPass();
+        getPermutationsConditions(context, extendedCssTree.getPermutationAxes())).runPass();
 
     CollectConstantDefinitions collectConstantDefinitionsPass = new CollectConstantDefinitions(
         cssTree);
@@ -403,10 +437,6 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     ReplaceConstantReferences replaceConstantReferences = new ReplaceConstantReferences(cssTree,
         collectConstantDefinitionsPass.getConstantDefinitions(), true, errorManager, false);
     replaceConstantReferences.runPass();
-
-    Map<String, GssFunction> gssFunctionMap = new GwtGssFunctionMapProvider().get();
-    new ResolveCustomFunctionNodes(cssTree.getMutatingVisitController(), errorManager,
-        gssFunctionMap, true, allowedNonStandardFunctions).runPass();
 
     new ImageSpriteCreator(cssTree.getMutatingVisitController(), context, errorManager).runPass();
 
@@ -441,7 +471,34 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
         externalClassesCollector.getExternalClassNames());
   }
 
-  private CssTree parseResources(List<URL> resources, TreeLogger logger)
+  private Set<String> getPermutationsConditions(ResourceContext context,
+      List<String> permutationAxes) {
+    Builder<String> setBuilder = ImmutableSet.builder();
+    PropertyOracle oracle = context.getGeneratorContext().getPropertyOracle();
+
+    for (String permutationAxis : permutationAxes) {
+      String propValue = null;
+      try {
+        SelectionProperty selProp = oracle.getSelectionProperty(null,
+            permutationAxis);
+        propValue = selProp.getCurrentValue();
+      } catch (BadPropertyValueException e) {
+        try {
+          ConfigurationProperty confProp = oracle.getConfigurationProperty(permutationAxis);
+          propValue = confProp.getValues().get(0);
+        } catch (BadPropertyValueException e1) {
+          e1.printStackTrace();
+        }
+      }
+
+      if (propValue != null) {
+        setBuilder.add(permutationAxis + ":" + propValue);
+      }
+    }
+    return setBuilder.build();
+  }
+
+  private ExtendedCssTree parseResources(List<URL> resources, TreeLogger logger)
       throws UnableToCompleteException {
     List<SourceCode> sourceCodes = new ArrayList<SourceCode>(resources.size());
 
@@ -450,15 +507,13 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
           "Parsing GSS stylesheet " + stylesheet.toExternalForm());
 
       try {
-        File file = new File(stylesheet.toURI());
         // TODO : always use UTF-8 to read the file ?
-        String fileContent = Files.toString(file, Charsets.UTF_8);
-        sourceCodes.add(new SourceCode(file.getName(), fileContent));
+        String fileContent = Resources.asByteSource(stylesheet).asCharSource(Charsets.UTF_8)
+            .read();
+        sourceCodes.add(new SourceCode(stylesheet.getFile(), fileContent));
         continue;
 
       } catch (IOException e) {
-        branchLogger.log(TreeLogger.ERROR, "Unable to parse CSS", e);
-      } catch (URISyntaxException e) {
         branchLogger.log(TreeLogger.ERROR, "Unable to parse CSS", e);
       }
       throw new UnableToCompleteException();
@@ -473,11 +528,11 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       throw new UnableToCompleteException();
     }
 
-    finalizeTree(tree);
+    List<String> permutationAxes = finalizeTree(tree);
 
     checkErrors();
 
-    return tree;
+    return new ExtendedCssTree(tree, permutationAxes);
   }
 
   private String printCssTree(CssTree tree) {
