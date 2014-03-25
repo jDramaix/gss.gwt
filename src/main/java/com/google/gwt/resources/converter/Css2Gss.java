@@ -42,6 +42,7 @@ public class Css2Gss {
     DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor();
     defCollectorVisitor.accept(sheet);
 
+    new ElseNodeCreator().accept(sheet);
 
     GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(new DefaultTextOutput
         (false), defCollectorVisitor.getDefMapping());
@@ -51,14 +52,23 @@ public class Css2Gss {
   }
 
   public static void main(String... args) {
+    if (args.length != 1) {
+      printUsage();
+      System.exit(-1);
+    }
+
     try {
-      System.err.println(new Css2Gss("//Users/julien/git/gss" +
-          ".gwt/src/main/java/com/google/gwt/resources/converter/test.css").toGss());
+      System.out.println(new Css2Gss(args[0]).toGss());
     } catch (Exception e) {
       e.printStackTrace();
       System.exit(-1);
     }
 
     System.exit(0);
+  }
+
+  private static void printUsage() {
+    System.err.println("Usage :");
+    System.err.println("java " + Css2Gss.class.getName() + " fileNameToConvertPath");
   }
 }

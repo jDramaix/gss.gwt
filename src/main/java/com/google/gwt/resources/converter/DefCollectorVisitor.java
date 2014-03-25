@@ -81,7 +81,5 @@ public class DefCollectorVisitor extends CssVisitor {
     }
 
     return true;
-
   }
-
 }
