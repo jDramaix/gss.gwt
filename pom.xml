@@ -5,9 +5,25 @@
     <artifactId>gssresource</artifactId>
     <packaging>jar</packaging>
     <version>1.0-SNAPSHOT</version>
-    <name>Google Closure stylesheet support for GWT</name>
+    <name>GssResource</name>
+    <description>Google Closure stylesheet support for GWT</description>
     <url>https://github.com/jDramaix/gss.gwt</url>
     <inceptionYear>2013</inceptionYear>
+
+    <developers>
+        <developer>
+            <id>jdramaix</id>
+            <name>Julien Dramaix</name>
+            <email>julien.dramaix@gmail.com</email>
+            <timezone>+1</timezone>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:jDramaix/gss.gwt.git</connection>
+        <developerConnection>scm:git:git@github.com:jDramaix/gss.gwt.git</developerConnection>
+        <url>git@github.com:jDramaix/gss.gwt.git</url>
+    </scm>
 
     <licenses>
         <license>
@@ -22,7 +38,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <gwt.version>2.6.0</gwt.version>
-        <guava.version>15.0</guava.version>
+        <guava.version>16.0.1</guava.version>
         <closure.version>v20131127</closure.version>
     </properties>
 
@@ -63,8 +79,6 @@
             <artifactId>closure-stylesheets</artifactId>
             <version>${closure.version}</version>
         </dependency>
-
-
     </dependencies>
 
     <pluginRepositories>
