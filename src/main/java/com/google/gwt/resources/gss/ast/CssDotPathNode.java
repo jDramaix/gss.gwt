@@ -17,6 +17,7 @@
 package com.google.gwt.resources.gss.ast;
 
 import com.google.common.base.Strings;
+import com.google.common.css.SourceCodeLocation;
 import com.google.common.css.compiler.ast.CssValueNode;
 import com.google.gwt.core.ext.Generator;
 
@@ -40,8 +41,8 @@ public class CssDotPathNode extends CssValueNode {
   private String prefix;
   private String path;
 
-  public CssDotPathNode(String dotPath, String prefix, String suffix) {
-    super(resolveExpression(dotPath, prefix, suffix));
+  public CssDotPathNode(String dotPath, String prefix, String suffix, SourceCodeLocation sourceCodeLocation) {
+    super(resolveExpression(dotPath, prefix, suffix), sourceCodeLocation);
 
     this.prefix = prefix;
     this.suffix = suffix;
@@ -50,7 +51,7 @@ public class CssDotPathNode extends CssValueNode {
 
   @Override
   public CssValueNode deepCopy() {
-    return new CssDotPathNode(path, prefix, suffix);
+    return new CssDotPathNode(path, prefix, suffix, getSourceCodeLocation());
   }
 
   public String getPath() {

@@ -19,6 +19,7 @@ package com.google.gwt.resources.gss;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.css.SourceCodeLocation;
+import com.google.common.css.compiler.ast.CssCommentNode;
 import com.google.common.css.compiler.ast.CssCompilerPass;
 import com.google.common.css.compiler.ast.CssDeclarationNode;
 import com.google.common.css.compiler.ast.CssFunctionArgumentsNode;
@@ -43,6 +44,8 @@ import com.google.gwt.resources.ext.ResourceGeneratorUtil;
 import com.google.gwt.resources.gss.ast.CssDotPathNode;
 
 import java.util.List;
+
+import static com.google.common.css.compiler.passes.PassUtil.ALTERNATE;
 
 public class ImageSpriteCreator extends DefaultTreeVisitor implements CssCompilerPass {
   private static final String SPRITE_PROPERTY_NAME = "gwt-sprite";
@@ -84,34 +87,37 @@ public class ImageSpriteCreator extends DefaultTreeVisitor implements CssCompile
     // build the url function
     CssFunctionNode urlFunction = new CssFunctionNode(Function.byName("url"), location);
     CssDotPathNode imageUrl = new CssDotPathNode(imageResource + ".getSafeUri.asString", null,
-        null);
+        null, location);
     CssFunctionArgumentsNode urlFunctionArguments = new CssFunctionArgumentsNode();
     urlFunctionArguments.addChildToBack(imageUrl);
     urlFunction.setArguments(urlFunctionArguments);
 
     // build left offset
-    CssDotPathNode left = new CssDotPathNode(imageResource + ".getLeft", "-", "px");
+    CssDotPathNode left = new CssDotPathNode(imageResource + ".getLeft", "-", "px", location);
 
     // build top offset
-    CssDotPathNode top = new CssDotPathNode(imageResource + ".getTop", "-", "px");
+    CssDotPathNode top = new CssDotPathNode(imageResource + ".getTop", "-", "px", location);
 
     // build repeat
-    CssLiteralNode repeat = new CssLiteralNode(repeatText);
+    CssLiteralNode repeat = new CssLiteralNode(repeatText, location);
 
 
     CssPropertyNode propertyNode = new CssPropertyNode("background", location);
     CssPropertyValueNode propertyValueNode = new CssPropertyValueNode(ImmutableList.of(urlFunction,
         left, top, repeat));
-    return new CssDeclarationNode(propertyNode, propertyValueNode);
+    propertyValueNode.setSourceCodeLocation(location);
+
+    return createDeclarationNode(propertyNode, propertyValueNode, location, true);
   }
 
   private CssDeclarationNode buildHeightDeclaration(String imageResource,
       SourceCodeLocation location) {
     CssPropertyNode propertyNode = new CssPropertyNode("height", location);
-    CssValueNode valueNode = new CssDotPathNode(imageResource + ".getHeight", null, "px");
+    CssValueNode valueNode = new CssDotPathNode(imageResource + ".getHeight", null, "px", location);
 
     CssPropertyValueNode propertyValueNode = new CssPropertyValueNode(ImmutableList.of(valueNode));
-    return new CssDeclarationNode(propertyNode, propertyValueNode);
+
+    return createDeclarationNode(propertyNode, propertyValueNode, location, true);
   }
 
   private CssDeclarationNode buildOverflowDeclaration(SourceCodeLocation location) {
@@ -119,16 +125,17 @@ public class ImageSpriteCreator extends DefaultTreeVisitor implements CssCompile
     CssValueNode valueNode = new CssLiteralNode("hidden", location);
 
     CssPropertyValueNode propertyValueNode = new CssPropertyValueNode(ImmutableList.of(valueNode));
-    return new CssDeclarationNode(propertyNode, propertyValueNode);
+
+    return createDeclarationNode(propertyNode, propertyValueNode, location, true);
   }
 
   private CssDeclarationNode buildWidthDeclaration(String imageResource,
       SourceCodeLocation location) {
     CssPropertyNode propertyNode = new CssPropertyNode("width", location);
-    CssValueNode valueNode = new CssDotPathNode(imageResource + ".getWidth", null, "px");
-
+    CssValueNode valueNode = new CssDotPathNode(imageResource + ".getWidth", null, "px", location);
     CssPropertyValueNode propertyValueNode = new CssPropertyValueNode(ImmutableList.of(valueNode));
-    return new CssDeclarationNode(propertyNode, propertyValueNode);
+
+    return createDeclarationNode(propertyNode, propertyValueNode, location, true);
   }
 
   private void createSprite(CssDeclarationNode declaration) {
@@ -186,5 +193,17 @@ public class ImageSpriteCreator extends DefaultTreeVisitor implements CssCompile
     listBuilder.add(buildBackgroundDeclaration(imageResource, repeatText, sourceCodeLocation));
 
     visitController.replaceCurrentBlockChildWith(listBuilder.build(), false);
+  }
+
+  private CssDeclarationNode createDeclarationNode(CssPropertyNode propertyNode,
+      CssPropertyValueNode propertyValueNode, SourceCodeLocation location, boolean useAlternate) {
+    CssDeclarationNode replaceNode =  new CssDeclarationNode(propertyNode, propertyValueNode);
+    replaceNode.setSourceCodeLocation(location);
+
+    if (useAlternate) {
+      replaceNode.setComments(ImmutableList.of(new CssCommentNode(ALTERNATE, location)));
+    }
+
+    return replaceNode;
   }
 }
