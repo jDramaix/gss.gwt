@@ -133,7 +133,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     @Override
     public void report(GssError error) {
-      logger.log(Type.ERROR, error.getMessage());
+      String fileName = error.getLocation().getSourceCode().getFileName();
+      logger.log(Type.ERROR, "Error in " + fileName + ": " + error.getMessage());
       hasErrors = true;
     }
 
