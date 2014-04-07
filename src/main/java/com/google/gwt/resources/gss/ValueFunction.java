@@ -50,7 +50,7 @@ public class ValueFunction implements GssFunction {
       prefix = args.get(2).getValue();
     }
 
-    CssDotPathNode cssDotPathNode = new CssDotPathNode(functionPath, prefix, suffix);
+    CssDotPathNode cssDotPathNode = new CssDotPathNode(functionPath, prefix, suffix, args.get(0).getSourceCodeLocation());
 
     // TODO add validation : maybe add a compilation pass that will validate the the method exist
     // on the resource bundle
