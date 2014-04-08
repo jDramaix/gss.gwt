@@ -148,7 +148,7 @@ For the time being, we are using a temporary repository to deploy the snapshot b
 
 ###Manually
 Download the following jar files and put them in your compilation classpath :
-* [gssresource.jar](http://gwtquery-plugins.googlecode.com/svn/mavenrepo/com/google/gwt/gssresource/1.0-SNAPSHOT/gssresource-1.0-20140406.091227-5.jar)
+* [gssresource.jar](http://gwtquery-plugins.googlecode.com/svn/mavenrepo/com/google/gwt/gssresource/1.0-SNAPSHOT/gssresource-1.0-20140407.162322-6.jar)
 * [closure-stylesheet.jar](http://gwtquery-plugins.googlecode.com/svn/mavenrepo/com/google/closure-stylesheets/closure-stylesheets/v20140407/closure-stylesheets-v20140407.jar)
 * [guava 12+](http://repo1.maven.org/maven2/com/google/guava/guava/15.0/guava-15.0.jar)
 
