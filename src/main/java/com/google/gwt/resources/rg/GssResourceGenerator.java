@@ -37,6 +37,7 @@ import com.google.common.css.compiler.ast.CssTree;
 import com.google.common.css.compiler.ast.CssValueNode;
 import com.google.common.css.compiler.ast.ErrorManager;
 import com.google.common.css.compiler.ast.GssError;
+import com.google.common.css.compiler.ast.GssFunction;
 import com.google.common.css.compiler.ast.GssParser;
 import com.google.common.css.compiler.ast.GssParserException;
 import com.google.common.css.compiler.passes.AbbreviatePositionalValues;
@@ -65,6 +66,7 @@ import com.google.common.css.compiler.passes.ProcessKeyframes;
 import com.google.common.css.compiler.passes.ProcessRefiners;
 import com.google.common.css.compiler.passes.ReplaceConstantReferences;
 import com.google.common.css.compiler.passes.ReplaceMixins;
+import com.google.common.css.compiler.passes.ResolveCustomFunctionNodes;
 import com.google.common.css.compiler.passes.SplitRulesetNodes;
 import com.google.common.io.Resources;
 import com.google.gwt.core.ext.BadPropertyValueException;
@@ -92,6 +94,7 @@ import com.google.gwt.resources.ext.ResourceGeneratorUtil;
 import com.google.gwt.resources.ext.SupportsGeneratorResultCaching;
 import com.google.gwt.resources.gss.CssPrinter;
 import com.google.gwt.resources.gss.ExternalClassesCollector;
+import com.google.gwt.resources.gss.GwtGssFunctionMapProvider;
 import com.google.gwt.resources.gss.ImageSpriteCreator;
 import com.google.gwt.resources.gss.PermutationsCollector;
 import com.google.gwt.resources.gss.RecordingBidiFlipper;
@@ -440,6 +443,10 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     replaceConstantReferences.runPass();
 
     new ImageSpriteCreator(cssTree.getMutatingVisitController(), context, errorManager).runPass();
+
+    Map<String, GssFunction> gssFunctionMap = new GwtGssFunctionMapProvider().get();
+    new ResolveCustomFunctionNodes(cssTree.getMutatingVisitController(), errorManager,
+        gssFunctionMap, true, allowedNonStandardFunctions).runPass();
 
     if (simplifyCss) {
       // Eliminate empty rules.
