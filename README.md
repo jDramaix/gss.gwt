@@ -115,42 +115,7 @@ l.addStyleName(style.animate());
 
 How to install it
 ----------
-###GWT
-GssResource works only with GWT 2.6.
-
-### Maven
-just include these blocks in your pom.xml :
-```xml
-  <repositories>
-      <!-- ... -->
-      <repository>
-        <id>gss.temp</id>
-        <url>http://gwtquery-plugins.googlecode.com/svn/mavenrepo</url>
-        <snapshots>
-          <enabled>true</enabled>
-        </snapshots>
-      </repository>
-  </repositories>
-
-  <dependencies>
-     <!-- ... -->
-
-     <dependency>
-        <groupId>com.google.gwt</groupId>
-        <artifactId>gssresource</artifactId>
-        <version>1.0-SNAPSHOT</version>
-        <scope>provided</scope>
-    </dependency>
-  </dependencies>
-
-```
-For the time being, we are using a temporary repository to deploy the snapshot but we'll deploy on sonatype asap.
-
-###Manually
-Download the following jar files and put them in your compilation classpath :
-* [gssresource.jar](http://gwtquery-plugins.googlecode.com/svn/mavenrepo/com/google/gwt/gssresource/1.0-SNAPSHOT/gssresource-1.0-20140410.144035-7.jar)
-* [closure-stylesheet.jar](http://gwtquery-plugins.googlecode.com/svn/mavenrepo/com/google/closure-stylesheets/closure-stylesheets/v20140407/closure-stylesheets-v20140407.jar)
-* [guava 12+](http://repo1.maven.org/maven2/com/google/guava/guava/15.0/guava-15.0.jar)
+Read the [installation guide](https://github.com/jDramaix/gss.gwt/wiki/Installation-Guide)
 
 Contributing
 ----------
