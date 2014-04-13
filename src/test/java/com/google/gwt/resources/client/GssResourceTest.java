@@ -9,10 +9,25 @@ public class GssResourceTest extends GWTTestCase {
     return "com.google.gwt.resources.GssResourceTest";
   }
 
-  public void testSimple() {
-    TestResources res = GWT.create(TestResources.class);
-    String text = res.style().getText();
+  public void testMixin() {
+    String text = res().mixin().getText();
 
-    assertEquals(".a-a{background-color:#0b15a1;width:120px;height:100px}", text);
+    assertTrue(text.contains("{width:120px;height:100px}"));
+  }
+
+  public void testAdd() {
+    String text = res().add().getText();
+
+    assertTrue(text.contains("{width:220px}"));
+  }
+
+  public void testEval() {
+    String text = res().eval().getText();
+
+    assertTrue(text.contains("{color:#fff;background-color:#f00}"));
+  }
+
+  private TestResources res() {
+    return GWT.create(TestResources.class);
   }
 }

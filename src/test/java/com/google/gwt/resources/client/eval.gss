@@ -1,0 +1,6 @@
+@def WHITE eval('com.google.gwt.resources.client.Colors.white()');
+
+.someClass {
+    color: WHITE;
+    background-color: eval('com.google.gwt.resources.client.Colors.red()')
+}

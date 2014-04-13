@@ -25,7 +25,7 @@ import java.util.Map;
 public class GwtGssFunctionMapProvider extends DefaultGssFunctionMapProvider {
   @Override
   public Map<String, GssFunction> get() {
-    Map<String,GssFunction> gssFunction = super.get();
+    Map<String, GssFunction> gssFunction = super.get();
 
     return ImmutableMap.<String, GssFunction>builder().putAll(gssFunction)
         // TODO add a namespace for specific gwt function ?
