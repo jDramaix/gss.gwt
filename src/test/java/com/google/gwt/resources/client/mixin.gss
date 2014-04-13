@@ -1,11 +1,8 @@
-@def MY_BLUE #0B15A1;
-
 @defmixin size(WIDTH, HEIGHT) {
   width: WIDTH;
   height: HEIGHT;
 }
 
 .someClass {
-  background-color: MY_BLUE;
   @mixin size(120px, 100px);
 }

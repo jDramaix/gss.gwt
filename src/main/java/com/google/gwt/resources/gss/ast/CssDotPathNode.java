@@ -23,7 +23,7 @@ import com.google.gwt.core.ext.Generator;
 
 public class CssDotPathNode extends CssValueNode {
 
-  public static String resolveExpression(String path, String prefix,String suffix) {
+  public static String resolveExpression(String path, String prefix, String suffix) {
     String expression = path.replace(".", "().") + "()";
 
     if (!Strings.isNullOrEmpty(prefix)) {
