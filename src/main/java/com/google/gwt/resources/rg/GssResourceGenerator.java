@@ -206,7 +206,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     // TODO : Should we foresee configuration properties for simplyfyCss and eliminateDeadCode
     // booleans ?
-    OptimizationInfo optimizationInfo = optimize(extendedCssTree, context, true, true);
+    OptimizationInfo optimizationInfo = optimize(extendedCssTree, context, logger, true, true);
 
     checkErrors();
 
@@ -414,7 +414,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
   }
 
-  private OptimizationInfo optimize(ExtendedCssTree extendedCssTree, ResourceContext context,
+  private OptimizationInfo optimize(ExtendedCssTree extendedCssTree, ResourceContext context, TreeLogger logger,
       boolean simplifyCss,  boolean eliminateDeadStyles) {
     CssTree cssTree = extendedCssTree.getCssTree();
 
@@ -444,7 +444,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     new ImageSpriteCreator(cssTree.getMutatingVisitController(), context, errorManager).runPass();
 
-    Map<String, GssFunction> gssFunctionMap = new GwtGssFunctionMapProvider().get();
+    Map<String, GssFunction> gssFunctionMap = new GwtGssFunctionMapProvider(context, logger).get();
     new ResolveCustomFunctionNodes(cssTree.getMutatingVisitController(), errorManager,
         gssFunctionMap, true, allowedNonStandardFunctions).runPass();
 
