@@ -16,21 +16,18 @@
 
 package com.google.gwt.resources.gss;
 
+import java.util.Map;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.css.compiler.ast.GssFunction;
 import com.google.common.css.compiler.gssfunctions.DefaultGssFunctionMapProvider;
-import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.resources.ext.ResourceContext;
-
-import java.util.Map;
 
 public class GwtGssFunctionMapProvider extends DefaultGssFunctionMapProvider {
   private final ResourceContext context;
-  private final TreeLogger logger;
 
-  public GwtGssFunctionMapProvider(ResourceContext context, TreeLogger logger) {
+  public GwtGssFunctionMapProvider(ResourceContext context) {
     this.context = context;
-    this.logger = logger;
   }
 
   @Override
@@ -41,7 +38,7 @@ public class GwtGssFunctionMapProvider extends DefaultGssFunctionMapProvider {
         // TODO add a namespace for specific gwt function ?
         .put(EvalFunction.getName(), new EvalFunction())
         .put(ValueFunction.getName(), new ValueFunction())
-        .put(GetResourceUrlFunction.getName(), new GetResourceUrlFunction(context, logger))
+        .put(ResourceUrlFunction.getName(), new ResourceUrlFunction(context))
         .build();
   }
 }

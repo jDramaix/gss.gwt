@@ -28,13 +28,13 @@ public class GssResourceTest extends GWTTestCase {
   }
 
   public void testGetResourceUrl_imageResource() {
-    String text = res().getResourceUrl_image().getText();
+    String text = res().resourceUrl_image().getText();
 
     assertTrue(text.contains("{background-image:url(" + res().someImageResource().getSafeUri().asString() + ")}"));
   }
 
   public void testData() {
-    String text = res().getResourceUrl_data().getText();
+    String text = res().resourceUrl_data().getText();
 
     assertTrue(text.contains("{cursor:url(" + res().someDataResource().getSafeUri().asString() + ")}"));
   }

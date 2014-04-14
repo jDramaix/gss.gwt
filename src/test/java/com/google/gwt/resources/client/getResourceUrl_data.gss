@@ -1,5 +1,0 @@
-@def THE_DATA_URL getResourceUrl('someDataResource');
-
-.someClass {
-    cursor: THE_DATA_URL;
-}

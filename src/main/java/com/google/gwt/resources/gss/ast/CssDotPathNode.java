@@ -16,6 +16,9 @@
 
 package com.google.gwt.resources.gss.ast;
 
+import java.util.Arrays;
+import java.util.List;
+
 import com.google.common.base.Strings;
 import com.google.common.css.SourceCodeLocation;
 import com.google.common.css.compiler.ast.CssValueNode;
@@ -27,7 +30,7 @@ public class CssDotPathNode extends CssValueNode {
     String expression = path.replace(".", "().") + "()";
 
     if (!Strings.isNullOrEmpty(prefix)) {
-      expression =  "\"" + Generator.escape(prefix) + "\" + " + expression;
+      expression = "\"" + Generator.escape(prefix) + "\" + " + expression;
     }
 
     if (!Strings.isNullOrEmpty(suffix)) {
@@ -64,5 +67,9 @@ public class CssDotPathNode extends CssValueNode {
 
   public String getPrefix() {
     return prefix;
+  }
+
+  public List<String> getParts() {
+    return Arrays.asList(path.split("\\."));
   }
 }

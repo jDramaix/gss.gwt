@@ -1,0 +1,5 @@
+@def THE_DATA_URL resourceUrl('someDataResource');
+
+.someClass {
+    cursor: THE_DATA_URL;
+}
