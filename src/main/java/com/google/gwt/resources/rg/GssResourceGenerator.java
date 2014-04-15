@@ -444,7 +444,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     new ImageSpriteCreator(cssTree.getMutatingVisitController(), context, errorManager).runPass();
 
-    Map<String, GssFunction> gssFunctionMap = new GwtGssFunctionMapProvider().get();
+    Map<String, GssFunction> gssFunctionMap = new GwtGssFunctionMapProvider(context).get();
     new ResolveCustomFunctionNodes(cssTree.getMutatingVisitController(), errorManager,
         gssFunctionMap, true, allowedNonStandardFunctions).runPass();
 

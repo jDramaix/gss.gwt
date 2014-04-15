@@ -16,13 +16,20 @@
 
 package com.google.gwt.resources.gss;
 
+import java.util.Map;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.css.compiler.ast.GssFunction;
 import com.google.common.css.compiler.gssfunctions.DefaultGssFunctionMapProvider;
-
-import java.util.Map;
+import com.google.gwt.resources.ext.ResourceContext;
 
 public class GwtGssFunctionMapProvider extends DefaultGssFunctionMapProvider {
+  private final ResourceContext context;
+
+  public GwtGssFunctionMapProvider(ResourceContext context) {
+    this.context = context;
+  }
+
   @Override
   public Map<String, GssFunction> get() {
     Map<String, GssFunction> gssFunction = super.get();
@@ -31,6 +38,7 @@ public class GwtGssFunctionMapProvider extends DefaultGssFunctionMapProvider {
         // TODO add a namespace for specific gwt function ?
         .put(EvalFunction.getName(), new EvalFunction())
         .put(ValueFunction.getName(), new ValueFunction())
+        .put(ResourceUrlFunction.getName(), new ResourceUrlFunction(context))
         .build();
   }
 }

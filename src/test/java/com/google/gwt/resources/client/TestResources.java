@@ -1,21 +1,20 @@
 package com.google.gwt.resources.client;
 
 public interface TestResources extends ClientBundle {
-  public interface Mixin extends GssResource {
+  public interface SomeGssResource extends GssResource {
     String someClass();
   }
 
-  public interface Add extends GssResource {
-    String someClass();
-  }
+  public SomeGssResource mixin();
 
-  public interface Eval extends GssResource {
-    String someClass();
-  }
+  public SomeGssResource add();
 
-  public Mixin mixin();
+  public SomeGssResource eval();
 
-  public Add add();
+  public SomeGssResource resourceUrl();
 
-  public Eval eval();
+  public ImageResource someImageResource();
+
+  @Source("bananaguitar.ani")
+  public DataResource someDataResource();
 }

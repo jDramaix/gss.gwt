@@ -101,7 +101,6 @@ public class ImageSpriteCreator extends DefaultTreeVisitor implements CssCompile
     // build repeat
     CssLiteralNode repeat = new CssLiteralNode(repeatText, location);
 
-
     CssPropertyNode propertyNode = new CssPropertyNode("background", location);
     CssPropertyValueNode propertyValueNode = new CssPropertyValueNode(ImmutableList.of(urlFunction,
         left, top, repeat));
