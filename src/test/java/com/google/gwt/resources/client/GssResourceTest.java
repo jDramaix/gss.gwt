@@ -27,16 +27,14 @@ public class GssResourceTest extends GWTTestCase {
     assertTrue(text.contains("{color:#fff;background-color:#f00}"));
   }
 
-  public void testGetResourceUrl_imageResource() {
-    String text = res().resourceUrl_image().getText();
+  public void testResourceUrl() {
+    String text = res().resourceUrl().getText();
 
-    assertTrue(text.contains("{background-image:url(" + res().someImageResource().getSafeUri().asString() + ")}"));
-  }
-
-  public void testData() {
-    String text = res().resourceUrl_data().getText();
-
-    assertTrue(text.contains("{cursor:url(" + res().someDataResource().getSafeUri().asString() + ")}"));
+    String expected = "{cursor:url(" + res().someDataResource().getSafeUri().asString() + ");"
+            + "background-image:url(" + res().someImageResource().getSafeUri().asString() + ");"
+            + "cursor:url(" + res().someDataResource().getSafeUri().asString() + ");"
+            + "background-image:url(" + res().someImageResource().getSafeUri().asString() + ")}";
+    assertTrue(text.contains(expected));
   }
 
   private TestResources res() {

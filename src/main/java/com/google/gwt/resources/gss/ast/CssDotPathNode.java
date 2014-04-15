@@ -69,7 +69,7 @@ public class CssDotPathNode extends CssValueNode {
     return prefix;
   }
 
-  public List<String> getParts() {
+  public List<String> getPathElements() {
     return Arrays.asList(path.split("\\."));
   }
 }

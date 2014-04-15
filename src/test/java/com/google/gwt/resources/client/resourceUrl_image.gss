@@ -1,5 +1,0 @@
-@def THE_IMG_URL resourceUrl('someImageResource');
-
-.someClass {
-    background-image: THE_IMG_URL;
-}

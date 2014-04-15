@@ -45,48 +45,63 @@ public class ResourceUrlFunction implements GssFunction {
   }
 
   @Override
-  public List<CssValueNode> getCallResultNodes(List<CssValueNode> cssValueNodes, ErrorManager errorManager) throws
-          GssFunctionException {
-    // TODO: refactor this in smaller methods
-
+  public List<CssValueNode> getCallResultNodes(List<CssValueNode> cssValueNodes, ErrorManager errorManager)
+          throws GssFunctionException {
     CssValueNode functionToEval = cssValueNodes.get(0);
+    String value = functionToEval.getValue();
+    SourceCodeLocation location = functionToEval.getSourceCodeLocation();
 
-    CssDotPathNode dotPathValue
-            = new CssDotPathNode(functionToEval.getValue(), "", "", functionToEval.getSourceCodeLocation());
+    String javaExpression = buildJavaExpression(value, location, errorManager);
 
+    CssFunctionNode urlNode = buildUrlNode(javaExpression, location);
+
+    return ImmutableList.<CssValueNode>of(urlNode);
+  }
+
+  @Override
+  public String getCallResultString(List<String> strings) throws GssFunctionException {
+    return strings.get(0);
+  }
+
+  private String buildJavaExpression(String value, SourceCodeLocation location,
+                                     ErrorManager errorManager) throws GssFunctionException {
+    CssDotPathNode dotPathValue = new CssDotPathNode(value, "", "", location);
+
+    assertMethodIsValidResource(location, dotPathValue.getPathElements(), errorManager);
+
+    return context.getImplementationSimpleSourceName() + ".this."
+            + dotPathValue.getValue() + ".getSafeUri().asString()";
+  }
+
+  private void assertMethodIsValidResource(SourceCodeLocation location, List<String> pathElements,
+                                           ErrorManager errorManager) throws GssFunctionException {
     JType methodType;
+
     try {
-      List<String> parts = dotPathValue.getParts();
       methodType = ResourceGeneratorUtil.getMethodByPath(context.getClientBundleType(),
-              parts, null).getReturnType();
+              pathElements, null).getReturnType();
     } catch (NotFoundException e) {
       String message = e.getMessage();
-      errorManager.report(new GssError(message, functionToEval.getSourceCodeLocation()));
-      throw new GssFunctionException(message);
+      errorManager.report(new GssError(message, location));
+      throw new GssFunctionException(message, e);
     }
 
     if (!dataResourceType.isAssignableFrom((JClassType) methodType) &&
             !imageResourceType.isAssignableFrom((JClassType) methodType)) {
       String message = "Invalid method type for url substitution: " + methodType + ". " +
               "Only DataResource and ImageResource are supported.";
-      errorManager.report(new GssError(message, functionToEval.getSourceCodeLocation()));
+      errorManager.report(new GssError(message, location));
       throw new GssFunctionException(message);
     }
-
-    String instance = context.getImplementationSimpleSourceName() + ".this."
-            + dotPathValue.getValue() + ".getSafeUri().asString()";
-
-    CssFunctionNode node = GssFunctions.createUrlNode("", functionToEval.getSourceCodeLocation());
-    CssJavaExpressionNode cssJavaExpressionNode = new CssJavaExpressionNode(instance);
-    CssFunctionArgumentsNode arguments =
-            new CssFunctionArgumentsNode(ImmutableList.<CssValueNode>of(cssJavaExpressionNode));
-    node.setArguments(arguments);
-
-    return ImmutableList.of((CssValueNode) node);
   }
 
-  @Override
-  public String getCallResultString(List<String> strings) throws GssFunctionException {
-    return strings.get(0);
+  private CssFunctionNode buildUrlNode(String javaExpression, SourceCodeLocation location) {
+    CssFunctionNode urlNode = GssFunctions.createUrlNode("", location);
+    CssJavaExpressionNode cssJavaExpressionNode = new CssJavaExpressionNode(javaExpression);
+    CssFunctionArgumentsNode arguments =
+            new CssFunctionArgumentsNode(ImmutableList.<CssValueNode>of(cssJavaExpressionNode));
+    urlNode.setArguments(arguments);
+
+    return urlNode;
   }
 }

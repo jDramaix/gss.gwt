@@ -11,9 +11,7 @@ public interface TestResources extends ClientBundle {
 
   public SomeGssResource eval();
 
-  public SomeGssResource resourceUrl_image();
-
-  public SomeGssResource resourceUrl_data();
+  public SomeGssResource resourceUrl();
 
   public ImageResource someImageResource();
 
