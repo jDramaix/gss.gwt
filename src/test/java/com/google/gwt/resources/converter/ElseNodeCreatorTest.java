@@ -21,7 +21,6 @@ import com.google.common.collect.Lists;
 import com.google.gwt.resources.css.ast.CssIf;
 import com.google.gwt.resources.css.ast.CssNode;
 import com.google.gwt.resources.css.ast.CssRule;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,27 +49,25 @@ public class ElseNodeCreatorTest {
     when(cssIf.getElseNodes()).thenReturn(elseNodes);
   }
 
-  @After
-  public void tearDown() {
-    elseNodeCreator = null;
-    cssIf = null;
-    elseNodes = null;
-  }
-
   @Test
-  public void testIf() {
+  public void visit_SimpleIf_NoElseNode() {
+    // when
     elseNodeCreator.visit(cssIf, null);
 
+    // then
     assertEquals(0, elseNodes.size());
   }
 
   @Test
   public void testIfElse() {
+    // given
     CssRule elseRule = new CssRule();
     elseNodes.add(elseRule);
 
+    // when
     elseNodeCreator.visit(cssIf, null);
 
+    // then
     assertEquals(1, elseNodes.size());
     assertTrue(elseNodes.get(0) instanceof CssElse);
     assertEquals(1, ((CssElse) elseNodes.get(0)).getNodes().size());
@@ -78,7 +75,8 @@ public class ElseNodeCreatorTest {
   }
 
   @Test
-  public void testIfElseWithSeveralRul() {
+  public void visit_IfElse_CssElseInElseNodes() {
+    // given
     CssRule elseRule1 = new CssRule();
     CssRule elseRule2 = new CssRule();
     CssRule elseRule3 = new CssRule();
@@ -86,8 +84,10 @@ public class ElseNodeCreatorTest {
     elseNodes.add(elseRule2);
     elseNodes.add(elseRule3);
 
+    // when
     elseNodeCreator.visit(cssIf, null);
 
+    // then
     assertEquals(1, elseNodes.size());
     assertTrue(elseNodes.get(0) instanceof CssElse);
 
@@ -99,13 +99,16 @@ public class ElseNodeCreatorTest {
   }
 
   @Test
-  public void testIfElif() {
+  public void visit_IfElif_CssElIfInElseNodes() {
+    // given
     CssIf elifNode = mockCssIf(0);
-
     elseNodes.add(elifNode);
 
+    // when
     elseNodeCreator.visit(cssIf, null);
 
+
+    // then
     assertEquals(1, elseNodes.size());
     assertTrue(elseNodes.get(0) instanceof CssElIf);
 
@@ -113,16 +116,17 @@ public class ElseNodeCreatorTest {
   }
 
   @Test
-  public void testIfElifElse() {
+  public void visit_IfElifElse_CssElIfAndCssElseInElseNodes() {
+    // given
     CssIf elifNode = mockCssIf(0);
     CssNode elseRule = new CssRule();
     when(elifNode.getElseNodes()).thenReturn(Lists.newArrayList(elseRule));
-
-
     elseNodes.add(elifNode);
 
+    // when
     elseNodeCreator.visit(cssIf, null);
 
+    // then
     assertEquals(2, elseNodes.size());
     assertTrue(elseNodes.get(0) instanceof CssElIf);
     assertTrue(elseNodes.get(1) instanceof CssElse);
@@ -135,17 +139,19 @@ public class ElseNodeCreatorTest {
   }
 
   @Test
-  public void testIfElifElifElse() {
+  public void visit_IfElifElifElse_2CssElIfAnd1CssElseInElseNodes() {
+    // given
     CssIf elifNode0 = mockCssIf(0);
     CssIf elifNode1 = mockCssIf(1);
     when(elifNode0.getElseNodes()).thenReturn(Lists.<CssNode>newArrayList(elifNode1));
     CssNode elseRule = new CssRule();
     when(elifNode1.getElseNodes()).thenReturn(Lists.newArrayList(elseRule));
-
     elseNodes.add(elifNode0);
 
+    // when
     elseNodeCreator.visit(cssIf, null);
 
+    // then
     assertEquals(3, elseNodes.size());
     assertTrue(elseNodes.get(0) instanceof CssElIf);
     assertTrue(elseNodes.get(1) instanceof CssElIf);
@@ -172,14 +178,14 @@ public class ElseNodeCreatorTest {
     assertEquals(0, toVerify.getElseNodes().size());
   }
 
-  private CssIf mockCssIf(int i) {
+  private CssIf mockCssIf(int id) {
     CssIf elifNode = mock(CssIf.class);
     when(elifNode.getNodes()).thenReturn(Lists.<CssNode>newArrayList(new CssRule(), new CssRule(),
         new CssRule()));
-    when(elifNode.getExpression()).thenReturn("expression" + i);
+    when(elifNode.getExpression()).thenReturn("expression" + id);
     when(elifNode.isNegated()).thenReturn(true);
-    when(elifNode.getPropertyName()).thenReturn("propertyName" + i);
-    when(elifNode.getPropertyValues()).thenReturn(new String[] {"propertyValue" + i});
+    when(elifNode.getPropertyName()).thenReturn("propertyName" + id);
+    when(elifNode.getPropertyValues()).thenReturn(new String[] {"propertyValue" + id});
 
     return elifNode;
   }

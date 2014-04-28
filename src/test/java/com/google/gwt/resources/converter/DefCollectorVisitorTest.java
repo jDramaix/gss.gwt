@@ -19,7 +19,6 @@ package com.google.gwt.resources.converter;
 import com.google.gwt.resources.css.ast.CssDef;
 import com.google.gwt.resources.css.ast.CssEval;
 import com.google.gwt.resources.css.ast.CssUrl;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,8 +27,9 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Map;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DefCollectorVisitorTest {
@@ -46,71 +46,79 @@ public class DefCollectorVisitorTest {
     defCollectorVisitor = new DefCollectorVisitor();
   }
 
-  @After
-  public void tearDown() {
-    defCollectorVisitor = null;
-    cssDef = null;
-    cssEval = null;
-    cssUrl = null;
-  }
-
   @Test
-  public void testVisitCssEval() {
+  public void visit_CssEval_KeyInMapping() {
+    // given
     when(cssEval.getKey()).thenReturn("eval");
 
+    // when
     defCollectorVisitor.visit(cssEval, null);
 
     Map<String, String> mapping = defCollectorVisitor.getDefMapping();
 
+    // then
     assertTrue(mapping.containsKey("eval"));
     assertEquals("EVAL", mapping.get("eval"));
   }
 
   @Test
-  public void testVisitCssDef() {
+  public void visit_CssDef_KeyInMapping() {
+    // given
     when(cssDef.getKey()).thenReturn("def");
 
+    // when
     defCollectorVisitor.visit(cssDef, null);
 
     Map<String, String> mapping = defCollectorVisitor.getDefMapping();
 
+    // then
     assertTrue(mapping.containsKey("def"));
     assertEquals("DEF", mapping.get("def"));
   }
 
   @Test
-  public void testVisitCssUrl() {
+  public void visit_CssUrl_KeyInMapping() {
+    // given
     when(cssUrl.getKey()).thenReturn("url");
 
+    // when
     defCollectorVisitor.visit(cssUrl, null);
 
     Map<String, String> mapping = defCollectorVisitor.getDefMapping();
 
+    // then
     assertTrue(mapping.containsKey("url"));
     assertEquals("URL", mapping.get("url"));
   }
 
 
   @Test
-  public void testDefCamelCase() {
+  public void visit_ConstantInCamelCase_UpperCaseKeyInMapping() {
+    // given
     when(cssDef.getKey()).thenReturn("myConstantName");
 
+    // when
     defCollectorVisitor.visit(cssDef, null);
 
+    // then
     Map<String, String> mapping = defCollectorVisitor.getDefMapping();
 
+    // then
     assertTrue(mapping.containsKey("myConstantName"));
     assertEquals("MY_CONSTANT_NAME", mapping.get("myConstantName"));
   }
 
   @Test
-  public void testDefUpperCase() {
+  public void visit_ConstantInUpperCase_UpperCaseKeyInMapping() {
+    // given
     when(cssDef.getKey()).thenReturn("MY_UPPERCASE_CONSTANT");
 
+    // when
     defCollectorVisitor.visit(cssDef, null);
 
     Map<String, String> mapping = defCollectorVisitor.getDefMapping();
 
+    // then
     assertTrue(mapping.containsKey("MY_UPPERCASE_CONSTANT"));
     assertEquals("MY_UPPERCASE_CONSTANT", mapping.get("MY_UPPERCASE_CONSTANT"));
   }
