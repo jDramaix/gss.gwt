@@ -59,7 +59,7 @@ public class ElseNodeCreatorTest {
   }
 
   @Test
-  public void testIfElse() {
+  public void visit_IfElse_CssElseInElseNodes() {
     // given
     CssRule elseRule = new CssRule();
     elseNodes.add(elseRule);
@@ -75,7 +75,7 @@ public class ElseNodeCreatorTest {
   }
 
   @Test
-  public void visit_IfElse_CssElseInElseNodes() {
+  public void visit_IfElseWithSeveralRules_CssElseInElseNodesAndContainsAllRules() {
     // given
     CssRule elseRule1 = new CssRule();
     CssRule elseRule2 = new CssRule();
