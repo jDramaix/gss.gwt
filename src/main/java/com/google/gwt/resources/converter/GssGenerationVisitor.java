@@ -29,6 +29,7 @@ import com.google.gwt.resources.css.ast.CssMediaRule;
 import com.google.gwt.resources.css.ast.CssNoFlip;
 import com.google.gwt.resources.css.ast.CssPageRule;
 import com.google.gwt.resources.css.ast.CssProperty;
+import com.google.gwt.resources.css.ast.CssProperty.DotPathValue;
 import com.google.gwt.resources.css.ast.CssProperty.ExpressionValue;
 import com.google.gwt.resources.css.ast.CssProperty.IdentValue;
 import com.google.gwt.resources.css.ast.CssProperty.Value;
@@ -54,6 +55,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private static final String ELSE = "@else ";
   private static final String IS = "is(\"%s\", \"%s\")";
   private static final String EVAL = "eval(\"%s\")";
+  private static final String URL = "resourceUrl(\"%s\")";
   private static final String DEF = "@def ";
   private static final String IMPORTANT = " !important";
 
@@ -104,19 +106,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssEval x, Context ctx) {
-    out.print(DEF);
-
-    String name = defKeyMapping.get(x.getKey());
-
-    if (name == null) {
-      throw new CssCompilerException("unknown @eval rule [" + x.getKey() + "]");
-    }
-
-    out.print(name);
-    out.print(' ');
-    out.print(format(EVAL, printValuesList(x.getValues())));
-
-    semiColon();
+    printDef(x, EVAL, "eval");
 
     return false;
   }
@@ -124,21 +114,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssDef x, Context ctx) {
-    out.print(DEF);
-
-    String name = defKeyMapping.get(x.getKey());
-
-    if (name == null) {
-      throw new CssCompilerException("unknown @def rule [" + x.getKey() + "]");
-    }
-
-    out.print(name);
-
-    out.print(' ');
-
-    out.print(printValuesList(x.getValues()));
-
-    semiColon();
+    printDef(x, null, "def");
 
     return false;
   }
@@ -340,10 +316,32 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssUrl x, Context ctx) {
-    // These are not valid CSS
-    out.printOpt("/* CssUrl */");
-    out.newlineOpt();
+    printDef(x, URL, "url");
     return false;
+  }
+
+  private void printDef(CssDef def, String valueTemplate, String atRule) {
+    out.print(DEF);
+
+    String name = defKeyMapping.get(def.getKey());
+
+    if (name == null) {
+      throw new CssCompilerException("unknown @" + atRule + " rule [" + def.getKey() + "]");
+    }
+
+    out.print(name);
+    out.print(' ');
+
+    String values = printValuesList(def.getValues());
+
+    if (valueTemplate != null) {
+      out.print(format(valueTemplate, values));
+    } else {
+      out.print(values);
+    }
+
+    semiColon();
+    out.newlineOpt();
   }
 
   private void closeBrace() {
@@ -417,6 +415,8 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
         expression = defKeyMapping.get(expression);
       } else if (value instanceof ExpressionValue) {
         expression = value.getExpression();
+      } else if (value instanceof DotPathValue) {
+        expression = ((DotPathValue) value).getPath();
       }
 
       builder.append(expression);

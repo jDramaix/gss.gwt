@@ -20,6 +20,7 @@ import com.google.common.base.Strings;
 import com.google.gwt.resources.css.ast.Context;
 import com.google.gwt.resources.css.ast.CssDef;
 import com.google.gwt.resources.css.ast.CssEval;
+import com.google.gwt.resources.css.ast.CssUrl;
 import com.google.gwt.resources.css.ast.CssVisitor;
 
 import java.util.HashMap;
@@ -50,6 +51,12 @@ public class DefCollectorVisitor extends CssVisitor {
 
   @Override
   public boolean visit(CssDef x, Context ctx) {
+    defMapping.put(x.getKey(), toUpperCase(x.getKey()));
+    return false;
+  }
+
+  @Override
+  public boolean visit(CssUrl x, Context ctx) {
     defMapping.put(x.getKey(), toUpperCase(x.getKey()));
     return false;
   }
