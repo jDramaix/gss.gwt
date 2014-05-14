@@ -20,7 +20,7 @@ import com.google.gwt.resources.ext.DefaultExtensions;
 import com.google.gwt.resources.ext.ResourceGeneratorType;
 import com.google.gwt.resources.rg.GssResourceGenerator;
 
-@DefaultExtensions(value = {".gss"})
+@DefaultExtensions(value = {".gss", ".css"})
 @ResourceGeneratorType(GssResourceGenerator.class)
 public interface GssResource extends CssResource {
 }
