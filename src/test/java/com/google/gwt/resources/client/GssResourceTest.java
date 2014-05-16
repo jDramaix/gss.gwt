@@ -33,9 +33,6 @@ public class GssResourceTest extends GWTTestCase {
     String expected = "{height:64px;width:64px;overflow:hidden;background:url(" + res()
         .someImageResource().getSafeUri().asString() + ") -0px -0px  no-repeat}";
 
-    System.err.println(text);
-    System.err.println(expected);
-
     assertTrue(text.contains(expected));
   }
 

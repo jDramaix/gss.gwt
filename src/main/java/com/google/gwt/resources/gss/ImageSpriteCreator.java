@@ -61,7 +61,8 @@ public class ImageSpriteCreator extends DefaultTreeVisitor implements CssCompile
     this.visitController = visitController;
     this.errorManager = errorManager;
     this.context = context;
-    this.imageResourceType = context.getGeneratorContext().getTypeOracle().findType(ImageResource.class.getName());
+    this.imageResourceType = context.getGeneratorContext().getTypeOracle().findType(
+        ImageResource.class.getName());
     this.resourceThisPrefix = context.getImplementationSimpleSourceName() + ".this";
   }
 
