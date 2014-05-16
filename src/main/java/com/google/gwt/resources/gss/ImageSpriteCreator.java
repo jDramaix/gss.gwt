@@ -49,18 +49,20 @@ import static com.google.common.css.compiler.passes.PassUtil.ALTERNATE;
 
 public class ImageSpriteCreator extends DefaultTreeVisitor implements CssCompilerPass {
   private static final String SPRITE_PROPERTY_NAME = "gwt-sprite";
+
   private final MutatingVisitController visitController;
   private final ErrorManager errorManager;
   private final ResourceContext context;
   private final JClassType imageResourceType;
+  private final String resourceThisPrefix;
 
   public ImageSpriteCreator(MutatingVisitController visitController, ResourceContext context,
       ErrorManager errorManager) {
     this.visitController = visitController;
     this.errorManager = errorManager;
     this.context = context;
-    this.imageResourceType = context.getGeneratorContext().getTypeOracle().findType(
-        ImageResource.class.getName());
+    this.imageResourceType = context.getGeneratorContext().getTypeOracle().findType(ImageResource.class.getName());
+    this.resourceThisPrefix = context.getImplementationSimpleSourceName() + ".this";
   }
 
   @Override
@@ -86,17 +88,19 @@ public class ImageSpriteCreator extends DefaultTreeVisitor implements CssCompile
       SourceCodeLocation location) {
     // build the url function
     CssFunctionNode urlFunction = new CssFunctionNode(Function.byName("url"), location);
-    CssDotPathNode imageUrl = new CssDotPathNode(imageResource + ".getSafeUri.asString", null,
-        null, location);
+    CssDotPathNode imageUrl = new CssDotPathNode(resourceThisPrefix, imageResource + ".getSafeUri" +
+        ".asString", null, null, location);
     CssFunctionArgumentsNode urlFunctionArguments = new CssFunctionArgumentsNode();
     urlFunctionArguments.addChildToBack(imageUrl);
     urlFunction.setArguments(urlFunctionArguments);
 
     // build left offset
-    CssDotPathNode left = new CssDotPathNode(imageResource + ".getLeft", "-", "px", location);
+    CssDotPathNode left = new CssDotPathNode(resourceThisPrefix, imageResource + ".getLeft", "-",
+        "px", location);
 
     // build top offset
-    CssDotPathNode top = new CssDotPathNode(imageResource + ".getTop", "-", "px", location);
+    CssDotPathNode top = new CssDotPathNode(resourceThisPrefix, imageResource + ".getTop",
+        "-", "px", location);
 
     // build repeat
     CssLiteralNode repeat = new CssLiteralNode(repeatText, location);
@@ -112,7 +116,8 @@ public class ImageSpriteCreator extends DefaultTreeVisitor implements CssCompile
   private CssDeclarationNode buildHeightDeclaration(String imageResource,
       SourceCodeLocation location) {
     CssPropertyNode propertyNode = new CssPropertyNode("height", location);
-    CssValueNode valueNode = new CssDotPathNode(imageResource + ".getHeight", null, "px", location);
+    CssValueNode valueNode = new CssDotPathNode(resourceThisPrefix, imageResource + ".getHeight",
+        null, "px", location);
 
     CssPropertyValueNode propertyValueNode = new CssPropertyValueNode(ImmutableList.of(valueNode));
 
@@ -131,7 +136,8 @@ public class ImageSpriteCreator extends DefaultTreeVisitor implements CssCompile
   private CssDeclarationNode buildWidthDeclaration(String imageResource,
       SourceCodeLocation location) {
     CssPropertyNode propertyNode = new CssPropertyNode("width", location);
-    CssValueNode valueNode = new CssDotPathNode(imageResource + ".getWidth", null, "px", location);
+    CssValueNode valueNode = new CssDotPathNode(resourceThisPrefix, imageResource + ".getWidth",
+        null, "px", location);
     CssPropertyValueNode propertyValueNode = new CssPropertyValueNode(ImmutableList.of(valueNode));
 
     return createDeclarationNode(propertyNode, propertyValueNode, location, true);

@@ -16,18 +16,22 @@
 
 package com.google.gwt.resources.gss.ast;
 
-import java.util.Arrays;
-import java.util.List;
-
 import com.google.common.base.Strings;
 import com.google.common.css.SourceCodeLocation;
 import com.google.common.css.compiler.ast.CssValueNode;
 import com.google.gwt.core.ext.Generator;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class CssDotPathNode extends CssValueNode {
 
-  public static String resolveExpression(String path, String prefix, String suffix) {
+  public static String resolveExpression(String instance, String path, String prefix, String suffix) {
     String expression = path.replace(".", "().") + "()";
+
+    if (!Strings.isNullOrEmpty(instance)) {
+      expression = instance + "."  + expression;
+    }
 
     if (!Strings.isNullOrEmpty(prefix)) {
       expression = "\"" + Generator.escape(prefix) + "\" + " + expression;
@@ -43,18 +47,25 @@ public class CssDotPathNode extends CssValueNode {
   private String suffix;
   private String prefix;
   private String path;
+  private String instance;
 
   public CssDotPathNode(String dotPath, String prefix, String suffix, SourceCodeLocation sourceCodeLocation) {
-    super(resolveExpression(dotPath, prefix, suffix), sourceCodeLocation);
+    this(null, dotPath, prefix, suffix, sourceCodeLocation);
+  }
+
+  public CssDotPathNode(String instance, String dotPath, String prefix, String suffix,
+      SourceCodeLocation sourceCodeLocation) {
+    super(resolveExpression(instance, dotPath, prefix, suffix), sourceCodeLocation);
 
     this.prefix = prefix;
     this.suffix = suffix;
     this.path = dotPath;
+    this.instance = instance;
   }
 
   @Override
   public CssValueNode deepCopy() {
-    return new CssDotPathNode(path, prefix, suffix, getSourceCodeLocation());
+    return new CssDotPathNode(instance, path, prefix, suffix, getSourceCodeLocation());
   }
 
   public String getPath() {
@@ -67,6 +78,10 @@ public class CssDotPathNode extends CssValueNode {
 
   public String getPrefix() {
     return prefix;
+  }
+
+  public String getInstance() {
+    return instance;
   }
 
   public List<String> getPathElements() {

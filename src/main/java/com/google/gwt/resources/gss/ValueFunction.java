@@ -73,7 +73,7 @@ public class ValueFunction implements GssFunction {
       prefix = args.get(2);
     }
 
-    return CssDotPathNode.resolveExpression(functionPath, prefix, suffix);
+    return CssDotPathNode.resolveExpression(null, functionPath, prefix, suffix);
   }
 
   @Override
