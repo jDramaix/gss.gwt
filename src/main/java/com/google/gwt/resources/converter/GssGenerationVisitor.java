@@ -41,6 +41,7 @@ import com.google.gwt.resources.css.ast.CssUrl;
 
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static java.lang.String.format;
 
@@ -58,6 +59,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private static final String URL = "resourceUrl(\"%s\")";
   private static final String DEF = "@def ";
   private static final String IMPORTANT = " !important";
+  private static final Pattern UNESCAPE = Pattern.compile("\\\\");
 
 
   private final Map<String, String> defKeyMapping;
@@ -103,14 +105,12 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     out.print(x.getRule());
   }
 
-
   @Override
   public boolean visit(CssEval x, Context ctx) {
     printDef(x, EVAL, "eval");
 
     return false;
   }
-
 
   @Override
   public boolean visit(CssDef x, Context ctx) {
@@ -121,7 +121,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssSprite x, Context ctx) {
-    out.newlineOpt();
     return false;
   }
 
@@ -142,29 +141,25 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssRule x, Context ctx) {
-    if (x.getProperties().isEmpty()) {
-      // Don't print empty rule blocks
-      return false;
-    }
-
     if (newLine) {
       out.newlineOpt();
-    } else {
-      newLine = true;
     }
 
     needsOpenBrace = true;
     needsComma = false;
+    newLine = false;
 
     return true;
   }
 
   @Override
   public void endVisit(CssRule x, Context ctx) {
-    if (!x.getProperties().isEmpty()) {
-      // Don't print empty rule blocks
-      closeBrace();
-    }
+    // empty rule block case.
+    maybePrintOpenBrace();
+
+    closeBrace();
+
+    newLine = true;
   }
 
   @Override
@@ -180,10 +175,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssProperty x, Context ctx) {
-    if (needsOpenBrace) {
-      openBrace();
-      needsOpenBrace = false;
-    }
+    maybePrintOpenBrace();
 
     if (noFlip) {
       out.print(NO_FLIP);
@@ -227,8 +219,8 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public void endVisit(CssIf x, Context ctx) {
-      closeBrace();
-      newLine = true;
+    closeBrace();
+    newLine = true;
   }
 
   @Override
@@ -258,7 +250,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssExternalSelectors x, Context ctx) {
-    // These are not valid CSS
     out.printOpt("/* @external");
     for (String className : x.getClasses()) {
       out.printOpt(" ");
@@ -308,11 +299,18 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     if (needsComma) {
       comma();
     }
+    if (newLine) {
+      out.newline();
+    }
+
     needsComma = true;
-    out.print(x.getSelector());
+    // TODO add a parameter to decide if we put selectors on the same line
+    newLine = true;
+
+    out.print(unescape(x.getSelector()));
+
     return true;
   }
-
 
   @Override
   public boolean visit(CssUrl x, Context ctx) {
@@ -341,7 +339,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     }
 
     semiColon();
-    out.newlineOpt();
   }
 
   private void closeBrace() {
@@ -351,7 +348,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   }
 
   private void colon() {
-    spaceOpt();
     out.print(':');
     spaceOpt();
   }
@@ -375,6 +371,13 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   private void spaceOpt() {
     out.printOpt(' ');
+  }
+
+  private void maybePrintOpenBrace() {
+    if (needsOpenBrace) {
+      openBrace();
+      needsOpenBrace = false;
+    }
   }
 
   private String printConditionnalExpression(CssIf x) {
@@ -423,5 +426,9 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     }
 
     return builder.toString();
+  }
+
+  private String unescape(String selector) {
+    return UNESCAPE.matcher(selector).replaceAll("");
   }
 }
