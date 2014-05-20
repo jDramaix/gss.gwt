@@ -1,0 +1,7 @@
+.someClassWithSprite {
+    gwt-sprite: 'someImageResource';
+}
+
+.someImageResource {
+    width: 15px;
+}

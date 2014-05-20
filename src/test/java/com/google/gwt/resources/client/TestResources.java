@@ -5,6 +5,14 @@ public interface TestResources extends ClientBundle {
     String someClass();
   }
 
+  public interface SpriteGssResource extends GssResource {
+    String someClassWithSprite();
+
+    // define a style class having the same name than another resource in the ClientBundle
+    // test possible conflict
+    String someImageResource();
+  }
+
   public SomeGssResource mixin();
 
   public SomeGssResource add();
@@ -12,6 +20,8 @@ public interface TestResources extends ClientBundle {
   public SomeGssResource eval();
 
   public SomeGssResource resourceUrl();
+
+  public SpriteGssResource sprite();
 
   public ImageResource someImageResource();
 
