@@ -30,7 +30,7 @@ public class CssDotPathNode extends CssValueNode {
     String expression = path.replace(".", "().") + "()";
 
     if (!Strings.isNullOrEmpty(instance)) {
-      expression = instance + "."  + expression;
+      expression = instance + "." + expression;
     }
 
     if (!Strings.isNullOrEmpty(prefix)) {

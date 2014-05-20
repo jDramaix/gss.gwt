@@ -13,6 +13,22 @@ public interface TestResources extends ClientBundle {
     String someImageResource();
   }
 
+  public interface ExternalClasses extends GssResource {
+    String obfuscatedClass();
+
+    String externalClass();
+
+    String externalClass2();
+
+    String unobfuscated();
+
+    String unobfuscated2();
+  }
+
+  public interface EmptyClass extends GssResource {
+    String empty();
+  }
+
   public SomeGssResource mixin();
 
   public SomeGssResource add();
@@ -22,6 +38,10 @@ public interface TestResources extends ClientBundle {
   public SomeGssResource resourceUrl();
 
   public SpriteGssResource sprite();
+
+  public ExternalClasses externalClasses();
+
+  public EmptyClass emptyClass();
 
   public ImageResource someImageResource();
 

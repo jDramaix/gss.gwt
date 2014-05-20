@@ -58,6 +58,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private static final String EVAL = "eval(\"%s\")";
   private static final String URL = "resourceUrl(\"%s\")";
   private static final String DEF = "@def ";
+  private static final String EXTERNAL = "@external";
   private static final String IMPORTANT = " !important";
   private static final Pattern UNESCAPE = Pattern.compile("\\\\");
 
@@ -250,13 +251,23 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssExternalSelectors x, Context ctx) {
-    out.printOpt("/* @external");
+    out.print(EXTERNAL);
     for (String className : x.getClasses()) {
-      out.printOpt(" ");
+      out.print(" ");
+
+      boolean needQuote = className.endsWith("*");
+
+      if (needQuote) {
+        out.print("'");
+      }
+
       out.printOpt(className);
+
+      if (needQuote) {
+        out.print("'");
+      }
     }
-    out.printOpt("; */");
-    out.newlineOpt();
+    semiColon();
     return false;
   }
 
