@@ -2,6 +2,8 @@ package com.google.gwt.resources.client;
 
 import com.google.gwt.core.shared.GWT;
 import com.google.gwt.junit.client.GWTTestCase;
+import com.google.gwt.resources.client.TestResources.EmptyClass;
+import com.google.gwt.resources.client.TestResources.ExternalClasses;
 
 public class GssResourceTest extends GWTTestCase {
   @Override
@@ -44,6 +46,39 @@ public class GssResourceTest extends GWTTestCase {
             + "cursor:url(" + res().someDataResource().getSafeUri().asString() + ");"
             + "background-image:url(" + res().someImageResource().getSafeUri().asString() + ")}";
     assertTrue(text.contains(expected));
+  }
+
+  /**
+   * Test that style classes mentioned as external are not obfuscated.
+   */
+  public void testExternalClasses() {
+    ExternalClasses externalClasses = res().externalClasses();
+
+    assertNotSame("obfuscatedClass", externalClasses.obfuscatedClass());
+
+    assertEquals("externalClass", externalClasses.externalClass());
+    assertEquals("externalClass2", externalClasses.externalClass2());
+    assertEquals("unobfuscated", externalClasses.unobfuscated());
+    assertEquals("unobfuscated2", externalClasses.unobfuscated2());
+  }
+
+  /**
+   * Test that empty class definitions doesn't throw an exception (issue #25) and that they are
+   * removed from the resulting css.
+   */
+  public void testEmptyClass() {
+    EmptyClass emptyClass = res().emptyClass();
+
+    assertEquals("", emptyClass.getText());
+  }
+
+  public void testObfuscationScope() {
+    ScopeResource res = GWT.create(ScopeResource.class);
+
+    assertEquals(res.scopeA().foo(), res.scopeA2().foo());
+    assertNotSame(res.scopeA().foo(), res.scopeB().foo());
+    assertNotSame(res.scopeB().foo(), res.scopeC().foo());
+    assertNotSame(res.scopeA().foo(), res.scopeC().foo());
   }
 
   private TestResources res() {

@@ -1,0 +1,21 @@
+@external externalClass, externalClass2, "unobfuscated*";
+
+.obfuscatedClass {
+    width: 100%;
+}
+
+.externalClass {
+    height: 50px;
+}
+
+.externalClass2 {
+    height: 50px;
+}
+
+.unobfuscated {
+    height: 50px;
+}
+
+.unobfuscated2 {
+    height: 50px;
+}
