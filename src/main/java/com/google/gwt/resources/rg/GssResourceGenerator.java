@@ -211,7 +211,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', '0', '1',
       '2', '3', '4', '5', '6'};
 
-  private static String makeIdent(long id) {
+  private static String encode(long id) {
     assert id >= 0;
 
     StringBuilder b = new StringBuilder();
@@ -339,7 +339,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     int seed = Math.abs((int) checksum.getValue());
 
-    return "G" + makeIdent(seed) + "-";
+    return encode(seed) + "-";
   }
 
   private SortedSet<JClassType> computeOperableTypes(ResourceContext context) {
