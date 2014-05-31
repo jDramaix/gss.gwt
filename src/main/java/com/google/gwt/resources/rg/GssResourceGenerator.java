@@ -145,10 +145,9 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     @Override
     public void report(GssError error) {
-      SourceCodeLocation codeLocation = error.getLocation();
       String fileName = "";
-      error.getLocation().getSourceCode().getFileName();
       String location = "";
+      SourceCodeLocation codeLocation = error.getLocation();
 
       if (codeLocation != null) {
         fileName = codeLocation.getSourceCode().getFileName();
