@@ -58,7 +58,7 @@
         <guava.version>17.0</guava.version>
         <junit.version>4.11</junit.version>
         <maven-surefire-plugin.version>2.17</maven-surefire-plugin.version>
-        <closure.version>v20140516</closure.version>
+        <closure.version>v20140530</closure.version>
         <mockito.version>1.9.5</mockito.version>
     </properties>
 

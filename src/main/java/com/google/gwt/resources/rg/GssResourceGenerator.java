@@ -31,6 +31,7 @@ import com.google.common.css.MinimalSubstitutionMap;
 import com.google.common.css.PrefixingSubstitutionMap;
 import com.google.common.css.RecordingSubstitutionMap;
 import com.google.common.css.SourceCode;
+import com.google.common.css.SourceCodeLocation;
 import com.google.common.css.SubstitutionMap;
 import com.google.common.css.compiler.ast.CssDefinitionNode;
 import com.google.common.css.compiler.ast.CssNumericNode;
@@ -85,10 +86,12 @@ import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
+import com.google.gwt.dev.util.Util;
 import com.google.gwt.dev.util.collect.IdentityHashMap;
 import com.google.gwt.i18n.client.LocaleInfo;
 import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.resources.client.CssResource.ClassName;
+import com.google.gwt.resources.client.GssResource;
 import com.google.gwt.resources.client.ResourcePrototype;
 import com.google.gwt.resources.ext.ClientBundleRequirements;
 import com.google.gwt.resources.ext.ResourceContext;
@@ -100,6 +103,7 @@ import com.google.gwt.resources.gss.GwtGssFunctionMapProvider;
 import com.google.gwt.resources.gss.ImageSpriteCreator;
 import com.google.gwt.resources.gss.PermutationsCollector;
 import com.google.gwt.resources.gss.RecordingBidiFlipper;
+import com.google.gwt.resources.rg.CssResourceGenerator.JClassOrderComparator;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.gwt.user.rebind.StringSourceWriter;
 
@@ -109,8 +113,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.zip.Adler32;
 
 public class GssResourceGenerator extends AbstractCssResourceGenerator implements
     SupportsGeneratorResultCaching {
@@ -138,8 +145,18 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     @Override
     public void report(GssError error) {
-      String fileName = error.getLocation().getSourceCode().getFileName();
-      logger.log(Type.ERROR, "Error in " + fileName + ": " + error.getMessage());
+      SourceCodeLocation codeLocation = error.getLocation();
+      String fileName = "";
+      error.getLocation().getSourceCode().getFileName();
+      String location = "";
+
+      if (codeLocation != null) {
+        fileName = codeLocation.getSourceCode().getFileName();
+        location = "[line:" + codeLocation.getBeginLineNumber() + " column:" + codeLocation
+            .getBeginIndexInLine() + "]";
+      }
+
+      logger.log(Type.ERROR, "Error in " + fileName + location + ": " + error.getMessage());
       hasErrors = true;
     }
 
@@ -189,6 +206,28 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   // TODO maybe define our own property ?
   private static final String KEY_STYLE = "CssResource.style";
   private static final String KEY_OBFUSCATION_PREFIX = "CssResource.obfuscationPrefix";
+  private static final String KEY_CLASS_PREFIX = "prefix";
+  private static final char[] BASE32_CHARS = new char[] {
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+      'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', '0', '1',
+      '2', '3', '4', '5', '6'};
+
+  private static String makeIdent(long id) {
+    assert id >= 0;
+
+    StringBuilder b = new StringBuilder();
+
+    // Use only guaranteed-alpha characters for the first character
+    b.append(BASE32_CHARS[(int) (id & 0xf)]);
+    id >>= 4;
+
+    while (id != 0) {
+      b.append(BASE32_CHARS[(int) (id & 0x1f)]);
+      id >>= 5;
+    }
+
+    return b.toString();
+  }
 
   private Map<JMethod, ExtendedCssTree> cssTreeMap;
   private Set<String> allowedNonStandardFunctions;
@@ -242,7 +281,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       ConfigurationProperty styleProp = propertyOracle.getConfigurationProperty(KEY_STYLE);
       obfuscateClassName = CssObfuscationStyle.getObfuscationStyle(styleProp.getValues().get(0))
           == CssObfuscationStyle.OBFUSCATED;
-      obfuscationPrefix = getObfuscationPrefix(propertyOracle);
+      obfuscationPrefix = getObfuscationPrefix(propertyOracle, context);
 
       ClientBundleRequirements requirements = context.getRequirements();
       requirements.addConfigurationProperty(KEY_STYLE);
@@ -267,17 +306,57 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
   }
 
-  private String getObfuscationPrefix(PropertyOracle propertyOracle)
+  private String getObfuscationPrefix(PropertyOracle propertyOracle, ResourceContext context)
       throws BadPropertyValueException {
     String prefix = propertyOracle.getConfigurationProperty(KEY_OBFUSCATION_PREFIX)
         .getValues().get(0);
     if ("empty".equalsIgnoreCase(prefix)) {
       return "";
     } else if ("default".equalsIgnoreCase(prefix)) {
-      return null;
+      return getDefaultObfuscationPrefix(context);
     }
 
     return prefix;
+  }
+
+  private String getDefaultObfuscationPrefix(ResourceContext context) {
+    String prefix = context.getCachedData(KEY_CLASS_PREFIX, String.class);
+    if (prefix == null) {
+      prefix = computeDefaultPrefix(context);
+      context.putCachedData(KEY_CLASS_PREFIX, prefix);
+    }
+
+    return prefix;
+  }
+
+  private String computeDefaultPrefix(ResourceContext context) {
+    SortedSet<JClassType> gssResources = computeOperableTypes(context);
+
+    Adler32 checksum = new Adler32();
+
+    for (JClassType type : gssResources) {
+      checksum.update(Util.getBytes(type.getQualifiedSourceName()));
+    }
+
+    int seed = Math.abs((int) checksum.getValue());
+
+    return "G" + makeIdent(seed) + "-";
+  }
+
+  private SortedSet<JClassType> computeOperableTypes(ResourceContext context) {
+    TypeOracle typeOracle = context.getGeneratorContext().getTypeOracle();
+    JClassType baseInterface = typeOracle.findType(GssResource.class.getCanonicalName());
+
+    SortedSet<JClassType> toReturn = new TreeSet<JClassType>(new JClassOrderComparator());
+
+    JClassType[] cssResourceSubtypes = baseInterface.getSubtypes();
+    for (JClassType type : cssResourceSubtypes) {
+      if (type.isInterface() != null) {
+        toReturn.add(type);
+      }
+    }
+
+    return toReturn;
   }
 
   @Override
@@ -417,8 +496,11 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     return externalClassesCollector.getExternalClassNames();
   }
 
-  private List<String> finalizeTree(CssTree cssTree) {
-    new CheckDependencyNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
+  private List<String> finalizeTree(CssTree cssTree) throws UnableToCompleteException {
+    new CheckDependencyNodes(cssTree.getMutatingVisitController(), errorManager, false).runPass();
+
+    // Don't continue if errors exist
+    checkErrors();
 
     new CreateStandardAtRuleNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
     new CreateMixins(cssTree.getMutatingVisitController(), errorManager).runPass();
