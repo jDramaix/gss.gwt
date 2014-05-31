@@ -11,6 +11,10 @@ How to use it
 -------------
 Read the [user guide](https://github.com/jDramaix/gss.gwt/wiki/GssResource-user-guide)
 
+How to migrate
+-------------
+Read the [migration guide](https://github.com/jDramaix/gss.gwt/wiki/Migration-guide)
+
 Examples
 ----------
 ### Add scroll effect to your cellList
