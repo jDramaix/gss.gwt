@@ -1,7 +1,7 @@
 gss.gwt
 =======
 
-This project aims to bring support of Google Closure Stylesheet in GWT
+This project aims to bring support of [Google Closure Stylesheets](https://code.google.com/p/closure-stylesheets/) in GWT.
 
 How to install it
 -----------------
