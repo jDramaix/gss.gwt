@@ -16,11 +16,24 @@
 
 package com.google.gwt.resources.rg;
 
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.zip.Adler32;
+
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicates;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Lists;
@@ -103,21 +116,10 @@ import com.google.gwt.resources.gss.GwtGssFunctionMapProvider;
 import com.google.gwt.resources.gss.ImageSpriteCreator;
 import com.google.gwt.resources.gss.PermutationsCollector;
 import com.google.gwt.resources.gss.RecordingBidiFlipper;
+import com.google.gwt.resources.gss.UnassignedCssClassVisitor;
 import com.google.gwt.resources.rg.CssResourceGenerator.JClassOrderComparator;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.gwt.user.rebind.StringSourceWriter;
-
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.zip.Adler32;
 
 public class GssResourceGenerator extends AbstractCssResourceGenerator implements
     SupportsGeneratorResultCaching {
@@ -244,6 +246,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   public String createAssignment(TreeLogger logger, ResourceContext context, JMethod method)
       throws UnableToCompleteException {
     ExtendedCssTree extendedCssTree = cssTreeMap.get(method);
+
+    checkForUnknownCssClasses(method, extendedCssTree);
 
     // TODO check if this can be done earlier (in the prepare method) ?
     Map<String, String> substitutionMap = doClassRenaming(extendedCssTree.getCssTree(), method);
@@ -787,5 +791,24 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
 
     return writeClassMethod(logger, userMethod, substitutionMap, sw);
+  }
+
+  private void checkForUnknownCssClasses(JMethod method, ExtendedCssTree extendedCssTree)
+          throws UnableToCompleteException {
+    JClassType returnType = (JClassType) method.getReturnType();
+
+    JMethod[] methods = returnType.getMethods();
+
+    ImmutableList.Builder<String> methodNamesBuilder = ImmutableList.builder();
+
+    for (JMethod jMethod : methods) {
+      methodNamesBuilder.add(jMethod.getName());
+    }
+
+    new UnassignedCssClassVisitor(extendedCssTree.getCssTree().getMutatingVisitController(),
+            methodNamesBuilder.build(), errorManager)
+            .runPass();
+
+    checkErrors();
   }
 }

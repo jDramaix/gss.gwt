@@ -72,6 +72,18 @@ public class GssResourceTest extends GWTTestCase {
     assertEquals("", emptyClass.getText());
   }
 
+  /**
+   * See issue #6
+   */
+  public void testCssClassWithMissingInterfaceMethodThrows() {
+    try {
+      res().missing();
+      fail("Missing exception");
+    } catch (RuntimeException e) {
+      // We expect this exception to be thrown
+    }
+  }
+
   public void testObfuscationScope() {
     ScopeResource res = GWT.create(ScopeResource.class);
 

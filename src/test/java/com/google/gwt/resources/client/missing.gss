@@ -1,0 +1,4 @@
+.someClass{}
+
+/* This CSS class is not defined as a method in the GssResource interface */
+.unknownClass{}
