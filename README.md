@@ -30,5 +30,3 @@ A 3D cube built using CSS3.
 Compiled application: http://jdramaix.github.io/gss.gwt-sample-3DCube/CubeSample.html
 
 Code: https://github.com/jDramaix/gss.gwt-sample-3DCube
-
-Test
