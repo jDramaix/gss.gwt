@@ -18,7 +18,7 @@ Read the [migration guide](https://github.com/jDramaix/gss.gwt/wiki/Migration-gu
 Examples
 ----------
 ### Add scroll effect to your cellList
-This example show you how to add CSS3 effect when you scroll a CellList. This example shows you how it's not easy to write a maintanable css file thanks to the new feature of GSS like the mixins. 
+This example show you how to add CSS3 effect when you scroll a CellList. This example shows you how it's not easy to write a maintanable css file thanks to the new feature of GSS like the mixins.
 
 Compiled application: http://jdramaix.github.io/gss.gwt-sample-ScrollList/GssSample.html
 
@@ -30,3 +30,5 @@ A 3D cube built using CSS3.
 Compiled application: http://jdramaix.github.io/gss.gwt-sample-3DCube/CubeSample.html
 
 Code: https://github.com/jDramaix/gss.gwt-sample-3DCube
+
+Test
