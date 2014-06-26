@@ -17,6 +17,9 @@
 
 package com.google.gwt.resources.converter;
 
+import static java.lang.String.format;
+
+import com.google.common.base.Strings;
 import com.google.gwt.dev.util.TextOutput;
 import com.google.gwt.resources.css.ast.Context;
 import com.google.gwt.resources.css.ast.CssCompilerException;
@@ -30,8 +33,6 @@ import com.google.gwt.resources.css.ast.CssNoFlip;
 import com.google.gwt.resources.css.ast.CssPageRule;
 import com.google.gwt.resources.css.ast.CssProperty;
 import com.google.gwt.resources.css.ast.CssProperty.DotPathValue;
-import com.google.gwt.resources.css.ast.CssProperty.ExpressionValue;
-import com.google.gwt.resources.css.ast.CssProperty.IdentValue;
 import com.google.gwt.resources.css.ast.CssProperty.Value;
 import com.google.gwt.resources.css.ast.CssRule;
 import com.google.gwt.resources.css.ast.CssSelector;
@@ -43,8 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static java.lang.String.format;
-
 public class GssGenerationVisitor extends ExtendedCssVisitor {
   /* templates and tokens list */
   private static final String NO_FLIP = "/* @noflip */";
@@ -55,7 +54,9 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private static final String ELSE_IF = "@elseif (%s)";
   private static final String ELSE = "@else ";
   private static final String IS = "is(\"%s\", \"%s\")";
-  private static final String EVAL = "eval(\"%s\")";
+  private static final String EVAL = "eval('%s')";
+  private static final String VALUE = "value('%s')";
+  private static final String VALUE_WITH_SUFFIX = "value('%s', '%s')";
   private static final String URL = "resourceUrl(\"%s\")";
   private static final String DEF = "@def ";
   private static final String EXTERNAL = "@external";
@@ -70,6 +71,8 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private boolean newLine;
   private boolean needsOpenBrace;
   private boolean needsComma;
+  private boolean inSprite;
+  private boolean inUrl;
 
   public GssGenerationVisitor(TextOutput out, Map<String, String> defKeyMapping) {
     this.defKeyMapping = defKeyMapping;
@@ -122,6 +125,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssSprite x, Context ctx) {
+    inSprite = true;
     return false;
   }
 
@@ -138,6 +142,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     accept(x.getProperties());
 
     closeBrace();
+    inSprite = false;
   }
 
   @Override
@@ -325,8 +330,14 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssUrl x, Context ctx) {
+    inUrl = true;
     printDef(x, URL, "url");
     return false;
+  }
+
+  @Override
+  public void endVisit(CssUrl x, Context ctx) {
+    inUrl = false;
   }
 
   private void printDef(CssDef def, String valueTemplate, String atRule) {
@@ -425,12 +436,21 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
       String expression = value.toCss();
 
-      if (value instanceof IdentValue && defKeyMapping.containsKey(expression)) {
+      if (value.isIdentValue() != null && defKeyMapping.containsKey(expression)) {
         expression = defKeyMapping.get(expression);
-      } else if (value instanceof ExpressionValue) {
+      } else if (value.isExpressionValue() != null) {
         expression = value.getExpression();
-      } else if (value instanceof DotPathValue) {
-        expression = ((DotPathValue) value).getPath();
+      } else if (value.isDotPathValue() != null) {
+        DotPathValue dotPathValue = value.isDotPathValue();
+        if (inUrl || inSprite) {
+          expression = dotPathValue.getPath();
+        } else {
+          if (Strings.isNullOrEmpty(dotPathValue.getSuffix())) {
+            expression = format(VALUE, dotPathValue.getPath());
+          } else {
+            expression = format(VALUE_WITH_SUFFIX, dotPathValue.getPath(), dotPathValue.getSuffix());
+          }
+        }
       }
 
       builder.append(expression);
