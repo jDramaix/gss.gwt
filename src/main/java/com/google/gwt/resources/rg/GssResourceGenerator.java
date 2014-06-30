@@ -284,6 +284,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
       ClientBundleRequirements requirements = context.getRequirements();
       requirements.addConfigurationProperty(KEY_STYLE);
+      requirements.addConfigurationProperty(KEY_OBFUSCATION_PREFIX);
     } catch (BadPropertyValueException e) {
       logger.log(TreeLogger.ERROR, "Unable to query module property", e);
       throw new UnableToCompleteException();
@@ -367,7 +368,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       throw new UnableToCompleteException();
     }
 
-    URL[] resourceUrls = ResourceGeneratorUtil.findResources(logger, context, method);
+    URL[] resourceUrls =  ResourceGeneratorUtil.findResources(logger, context, method);
     if (resourceUrls.length == 0) {
       logger.log(TreeLogger.ERROR, "At least one source must be specified");
       throw new UnableToCompleteException();

@@ -16,7 +16,6 @@
 
 package com.google.gwt.resources.converter;
 
-import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.util.DefaultTextOutput;
 import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
 import com.google.gwt.resources.css.GenerateCssAst;
@@ -29,26 +28,37 @@ import java.net.URL;
 
 public class Css2Gss {
 
-  private URL cssFile;
+  private final URL cssFile;
+  private final PrintWriter printWriter;
 
   public Css2Gss(String filePath) throws MalformedURLException {
     cssFile = new File(filePath).toURI().toURL();
+    printWriter = new PrintWriter(System.err);
   }
 
-  public String toGss() throws UnableToCompleteException {
-    CssStylesheet sheet = GenerateCssAst.exec(new PrintWriterTreeLogger(new PrintWriter(System
-        .out)), cssFile);
+  public Css2Gss(URL fileUrl, PrintWriter outputPrintWiter) {
+    cssFile = fileUrl;
+    printWriter = outputPrintWiter;
+  }
 
-    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor();
-    defCollectorVisitor.accept(sheet);
+  public String toGss() {
+    try {
+      CssStylesheet sheet = GenerateCssAst.exec(new PrintWriterTreeLogger(printWriter), cssFile);
 
-    new ElseNodeCreator().accept(sheet);
+      DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor();
+      defCollectorVisitor.accept(sheet);
 
-    GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(new DefaultTextOutput
-        (false), defCollectorVisitor.getDefMapping());
-    gssGenerationVisitor.accept(sheet);
+      new ElseNodeCreator().accept(sheet);
 
-    return gssGenerationVisitor.getContent();
+      GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(new DefaultTextOutput
+          (false), defCollectorVisitor.getDefMapping());
+      gssGenerationVisitor.accept(sheet);
+
+      return gssGenerationVisitor.getContent();
+    } catch (Exception e) {
+      printWriter.flush();
+      throw new RuntimeException(e);
+    }
   }
 
   public static void main(String... args) {

@@ -5,7 +5,7 @@ public class Colors {
     return "#fff";
   }
 
-  public static String red() {
+  public static String red(String test) {
     return "#f00";
   }
 }
