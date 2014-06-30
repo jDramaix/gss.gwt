@@ -16,6 +16,7 @@
 
 package com.google.gwt.resources.rg;
 
+import com.google.common.base.CaseFormat;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicates;
@@ -677,12 +678,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       throw new UnableToCompleteException();
     }
 
-    String name = userMethod.getName();
-
-    ClassName classNameOverride = userMethod.getAnnotation(ClassName.class);
-    if (classNameOverride != null) {
-      name = classNameOverride.value();
-    }
+    String name = getClassName(userMethod);
 
     String value = substitutionMap.get(name);
 
@@ -695,6 +691,16 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
 
     return true;
+  }
+
+  private String getClassName(JMethod method) {
+    String name = method.getName();
+
+    ClassName classNameOverride = method.getAnnotation(ClassName.class);
+    if (classNameOverride != null) {
+      name = classNameOverride.value();
+    }
+    return name;
   }
 
   private boolean writeDefMethod(CssDefinitionNode definitionNode, TreeLogger logger,
@@ -779,14 +785,37 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   private boolean writeUserMethod(TreeLogger logger, JMethod userMethod,
       SourceWriter sw, OptimizationInfo optimizationInfo, Map<String, String> substitutionMap)
       throws UnableToCompleteException {
+    String className = getClassName(userMethod);
+    // method to access style class ?
+    if (substitutionMap.containsKey(className)) {
+      return writeClassMethod(logger, userMethod, substitutionMap, sw);
+    }
 
+    // method to access constant value ?
     ConstantDefinitions constantDefinitions = optimizationInfo.constantDefinitions;
     CssDefinitionNode definitionNode = constantDefinitions.getConstantDefinition(userMethod.getName());
+
+    if (definitionNode == null) {
+      // try with upper case
+      definitionNode = constantDefinitions.getConstantDefinition(toUpperCase(userMethod.getName()));
+    }
 
     if (definitionNode != null) {
       return writeDefMethod(definitionNode, logger, userMethod, sw);
     }
 
-    return writeClassMethod(logger, userMethod, substitutionMap, sw);
+    // the method doesn't match a style class nor a constant
+    logger.log(Type.ERROR, "The following method [" + userMethod.getName() + "()] doesn't match a constant" +
+        " nor a style class. You could fix that by adding ." + className + " {}");
+    return false;
+  }
+
+  /**
+   * Transform a camel case string to upper case. Each word is separated by a '_'
+   * @param camelCase
+   * @return
+   */
+  private String toUpperCase(String camelCase) {
+    return CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, camelCase);
   }
 }
