@@ -2,8 +2,10 @@ package com.google.gwt.resources.client;
 
 import com.google.gwt.core.shared.GWT;
 import com.google.gwt.junit.client.GWTTestCase;
+import com.google.gwt.resources.client.TestResources.ClassNameAnnotation;
 import com.google.gwt.resources.client.TestResources.EmptyClass;
 import com.google.gwt.resources.client.TestResources.ExternalClasses;
+import com.google.gwt.resources.client.TestResources.WithConstant;
 
 public class GssResourceTest extends GWTTestCase {
   @Override
@@ -79,6 +81,24 @@ public class GssResourceTest extends GWTTestCase {
     assertNotSame(res.scopeA().foo(), res.scopeB().foo());
     assertNotSame(res.scopeB().foo(), res.scopeC().foo());
     assertNotSame(res.scopeA().foo(), res.scopeC().foo());
+  }
+
+  public void testConstant() {
+    WithConstant withConstant = res().withConstant();
+
+    assertEquals("15px", withConstant.constantOne());
+
+    String expectedCss = "." + withConstant.classOne() + "{padding:" +withConstant.constantOne()
+        +"}";
+    assertEquals(expectedCss, withConstant.getText());
+  }
+
+  public void testClassNameAnnotation() {
+    ClassNameAnnotation css = res().classNameAnnotation();
+
+    String expectedCss = "." + css.renamedClass() + "{color:black}." + css.nonRenamedClass()
+        + "{color:white}";
+    assertEquals(expectedCss, css.getText());
   }
 
   private TestResources res() {

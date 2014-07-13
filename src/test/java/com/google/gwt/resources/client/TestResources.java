@@ -29,22 +29,39 @@ public interface TestResources extends ClientBundle {
     String empty();
   }
 
-  public SomeGssResource mixin();
+  public interface WithConstant extends GssResource {
+    String constantOne();
 
-  public SomeGssResource add();
+    String classOne();
+  }
 
-  public SomeGssResource eval();
+  public interface ClassNameAnnotation extends GssResource {
+    @ClassName("renamed-class")
+    String renamedClass();
 
-  public SomeGssResource resourceUrl();
+    String nonRenamedClass();
+  }
 
-  public SpriteGssResource sprite();
+  ClassNameAnnotation classNameAnnotation();
 
-  public ExternalClasses externalClasses();
+  SomeGssResource mixin();
 
-  public EmptyClass emptyClass();
+  SomeGssResource add();
 
-  public ImageResource someImageResource();
+  SomeGssResource eval();
+
+  SomeGssResource resourceUrl();
+
+  SpriteGssResource sprite();
+
+  ExternalClasses externalClasses();
+
+  EmptyClass emptyClass();
+
+  WithConstant withConstant();
+
+  ImageResource someImageResource();
 
   @Source("bananaguitar.ani")
-  public DataResource someDataResource();
+  DataResource someDataResource();
 }
