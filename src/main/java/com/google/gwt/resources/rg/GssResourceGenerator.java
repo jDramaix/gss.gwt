@@ -797,11 +797,11 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
           throws UnableToCompleteException {
     JClassType returnType = (JClassType) method.getReturnType();
 
-    JMethod[] methods = returnType.getMethods();
+    JMethod[] inheritablemethods = returnType.getInheritableMethods();
 
     ImmutableList.Builder<String> methodNamesBuilder = ImmutableList.builder();
 
-    for (JMethod jMethod : methods) {
+    for (JMethod jMethod : inheritablemethods) {
       methodNamesBuilder.add(jMethod.getName());
     }
 

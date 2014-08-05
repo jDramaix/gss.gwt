@@ -37,8 +37,6 @@ public interface TestResources extends ClientBundle {
 
   public SomeGssResource resourceUrl();
 
-  public SomeGssResource missing();
-
   public SpriteGssResource sprite();
 
   public ExternalClasses externalClasses();

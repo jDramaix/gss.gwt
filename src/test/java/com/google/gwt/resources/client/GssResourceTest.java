@@ -77,7 +77,7 @@ public class GssResourceTest extends GWTTestCase {
    */
   public void testCssClassWithMissingInterfaceMethodThrows() {
     try {
-      res().missing();
+      GWT.create(BundleWithMissingMethod.class);
       fail("Missing exception");
     } catch (RuntimeException e) {
       // We expect this exception to be thrown

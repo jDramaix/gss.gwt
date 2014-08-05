@@ -7,25 +7,25 @@ import com.google.common.css.compiler.ast.CssCompilerPass;
 import com.google.common.css.compiler.ast.DefaultTreeVisitor;
 import com.google.common.css.compiler.ast.ErrorManager;
 import com.google.common.css.compiler.ast.GssError;
-import com.google.common.css.compiler.ast.MutatingVisitController;
+import com.google.common.css.compiler.ast.VisitController;
 
 public class UnassignedCssClassVisitor extends DefaultTreeVisitor implements CssCompilerPass {
-  private final MutatingVisitController mutatingVisitController;
+  private final VisitController visitController;
   private final List<String> methodNames;
   private final ErrorManager errorManager;
 
   public UnassignedCssClassVisitor(
-          MutatingVisitController mutatingVisitController,
+          VisitController visitController,
           List<String> methodNames,
           ErrorManager errorManager) {
-    this.mutatingVisitController = mutatingVisitController;
+    this.visitController = visitController;
     this.methodNames = methodNames;
     this.errorManager = errorManager;
   }
 
   @Override
   public void runPass() {
-    mutatingVisitController.startVisit(this);
+    visitController.startVisit(this);
   }
 
   @Override
