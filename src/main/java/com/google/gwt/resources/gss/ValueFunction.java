@@ -14,7 +14,6 @@
  * the License.
  */
 
-
 package com.google.gwt.resources.gss;
 
 import com.google.common.collect.ImmutableList;
