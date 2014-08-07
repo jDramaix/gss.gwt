@@ -26,6 +26,7 @@ public class AllGwtTests extends GWTTestSuite {
 
   public static Test suite() {
     GWTTestSuite suite = new GWTTestSuite();
+    suite.addTestSuite(GssResourceTest.class);
     return suite;
   }
 }
