@@ -459,7 +459,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     return builder.toString();
   }
 
-  private String unescape(String toEscapge) {
-    return UNESCAPE.matcher(toEscapge).replaceAll("");
+  private String unescape(String toEscape) {
+    return UNESCAPE.matcher(toEscape).replaceAll("");
   }
 }
