@@ -453,13 +453,13 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
         }
       }
 
-      builder.append(expression);
+      builder.append(unescape(expression));
     }
 
     return builder.toString();
   }
 
-  private String unescape(String selector) {
-    return UNESCAPE.matcher(selector).replaceAll("");
+  private String unescape(String toEscapge) {
+    return UNESCAPE.matcher(toEscapge).replaceAll("");
   }
 }
