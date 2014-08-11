@@ -828,10 +828,6 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     return CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, camelCase);
   }
 
-  /**
-   * Process the Import annotation on the associated JMethod and return a map of
-   * prefixes to JMethods to locally obfuscated names.
-   */
   private Map<String, Map<String, String>> computeReplacements(JMethod method, TreeLogger logger,
       ResourceContext context) throws UnableToCompleteException {
     Map<String, Map<String, String>> replacementsWithPrefix = new HashMap<String, Map<String,
