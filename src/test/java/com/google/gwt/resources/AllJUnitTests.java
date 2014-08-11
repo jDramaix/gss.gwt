@@ -19,12 +19,16 @@ import com.google.gwt.resources.converter.DefCollectorVisitorTest;
 import com.google.gwt.resources.converter.ElseNodeCreatorTest;
 import com.google.gwt.resources.gss.ExternalClassesCollectorTest;
 
+import com.google.gwt.resources.gss.RenamingSubstitutionMapTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
 @SuiteClasses({
-    DefCollectorVisitorTest.class, ElseNodeCreatorTest.class, ExternalClassesCollectorTest.class})
+    DefCollectorVisitorTest.class,
+    ElseNodeCreatorTest.class,
+    ExternalClassesCollectorTest.class,
+    RenamingSubstitutionMapTest.class})
 public class AllJUnitTests {
 }

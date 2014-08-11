@@ -21,6 +21,7 @@ import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.resources.client.TestResources.ClassNameAnnotation;
 import com.google.gwt.resources.client.TestResources.EmptyClass;
 import com.google.gwt.resources.client.TestResources.ExternalClasses;
+import com.google.gwt.resources.client.TestResources.TestImportCss;
 import com.google.gwt.resources.client.TestResources.WithConstant;
 
 public class GssResourceTest extends GWTTestCase {
@@ -60,9 +61,9 @@ public class GssResourceTest extends GWTTestCase {
     String text = res().resourceUrl().getText();
 
     String expected = "{cursor:url(" + res().someDataResource().getSafeUri().asString() + ");"
-            + "background-image:url(" + res().someImageResource().getSafeUri().asString() + ");"
-            + "cursor:url(" + res().someDataResource().getSafeUri().asString() + ");"
-            + "background-image:url(" + res().someImageResource().getSafeUri().asString() + ")}";
+        + "background-image:url(" + res().someImageResource().getSafeUri().asString() + ");"
+        + "cursor:url(" + res().someDataResource().getSafeUri().asString() + ");"
+        + "background-image:url(" + res().someImageResource().getSafeUri().asString() + ")}";
     assertTrue(text.contains(expected));
   }
 
@@ -104,8 +105,8 @@ public class GssResourceTest extends GWTTestCase {
 
     assertEquals("15px", withConstant.constantOne());
 
-    String expectedCss = "." + withConstant.classOne() + "{padding:" +withConstant.constantOne()
-        +"}";
+    String expectedCss = "." + withConstant.classOne() + "{padding:" + withConstant.constantOne()
+        + "}";
     assertEquals(expectedCss, withConstant.getText());
   }
 
@@ -114,6 +115,18 @@ public class GssResourceTest extends GWTTestCase {
 
     String expectedCss = "." + css.renamedClass() + "{color:black}." + css.nonRenamedClass()
         + "{color:white}";
+    assertEquals(expectedCss, css.getText());
+  }
+
+  public void testImportAndImportWithPrefix() {
+    TestImportCss css = res().testImportCss();
+    ImportResource importResource = GWT.create(ImportResource.class);
+    ImportResource.ImportCss importCss = importResource.importCss();
+    ImportResource.ImportWithPrefixCss importWithPrefixCss = importResource.importWithPrefixCss();
+
+    String expectedCss = "." + css.other() + "{color:black}." + importCss.className() +
+        " ." + css.other() + "{color:white}." + importWithPrefixCss.className() + " ." +
+        css.other() + "{color:gray}";
     assertEquals(expectedCss, css.getText());
   }
 
