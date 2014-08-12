@@ -17,6 +17,7 @@
 package com.google.gwt.resources.client;
 
 import com.google.gwt.resources.client.CssResource.Import;
+import com.google.gwt.resources.client.ScopeResource.SharedParent;
 
 public interface TestResources extends ClientBundle {
   interface SomeGssResource extends GssResource {
@@ -64,6 +65,11 @@ public interface TestResources extends ClientBundle {
     String other();
   }
 
+  // used to test shared annotation between clientBundle
+  interface SharedChild3 extends SharedParent {
+    String nonSharedClassName();
+  }
+
   ClassNameAnnotation classNameAnnotation();
 
   SomeGssResource mixin();
@@ -89,4 +95,6 @@ public interface TestResources extends ClientBundle {
 
   @Import({ImportResource.ImportWithPrefixCss.class, ImportResource.ImportCss.class})
   TestImportCss testImportCss();
+
+  SharedChild3 sharedChild3();
 }

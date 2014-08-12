@@ -1,0 +1,12 @@
+@def exampleProperty value('calltomethod.submethod');
+@def exampleProperty2 value('calltomethod.submethod', 'px');
+
+.css {
+    color: exampleProperty;
+    color: #fff;
+    color: rgba(0,0,0, .9);
+}
+
+@sprite  .blop {
+    gwt-image: "imageAccessor";
+}

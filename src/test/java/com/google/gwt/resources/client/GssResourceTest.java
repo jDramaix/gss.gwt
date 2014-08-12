@@ -130,6 +130,37 @@ public class GssResourceTest extends GWTTestCase {
     assertEquals(expectedCss, css.getText());
   }
 
+  public void testSharedScope() {
+    ScopeResource res = GWT.create(ScopeResource.class);
+    TestResources res2 = res();
+
+    // shareClassName1 is shared
+    assertEquals(res.sharedParent().sharedClassName1(), res.sharedChild1().sharedClassName1());
+    assertEquals(res.sharedParent().sharedClassName1(), res.sharedChild2().sharedClassName1());
+    assertEquals(res.sharedParent().sharedClassName1(), res.sharedGreatChild().sharedClassName1());
+    assertEquals(res.sharedParent().sharedClassName1(), res2.sharedChild3().sharedClassName1());
+
+    // shareClassName2 is shared
+    assertEquals(res.sharedParent().sharedClassName2(), res.sharedChild1().sharedClassName2());
+    assertEquals(res.sharedParent().sharedClassName2(), res.sharedChild2().sharedClassName2());
+    assertEquals(res.sharedParent().sharedClassName2(), res.sharedGreatChild().sharedClassName2());
+    assertEquals(res.sharedParent().sharedClassName2(), res2.sharedChild3().sharedClassName2());
+
+    // nonSharedClassName isn't shared
+    assertNotSame(res.sharedChild1().nonSharedClassName(),
+        res.sharedChild2().nonSharedClassName());
+    assertNotSame(res.sharedChild1().nonSharedClassName(),
+        res.sharedGreatChild().nonSharedClassName());
+    assertNotSame(res.sharedChild1().nonSharedClassName(),
+        res2.sharedChild3().nonSharedClassName());
+    assertNotSame(res.sharedChild2().nonSharedClassName(),
+        res.sharedGreatChild().nonSharedClassName());
+    assertNotSame(res.sharedChild2().nonSharedClassName(),
+        res2.sharedChild3().nonSharedClassName());
+    assertNotSame(res2.sharedChild3().nonSharedClassName(),
+        res.sharedGreatChild().nonSharedClassName());
+  }
+
   private TestResources res() {
     return GWT.create(TestResources.class);
   }

@@ -92,6 +92,7 @@ import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.resources.client.CssResource.ClassName;
 import com.google.gwt.resources.client.CssResource.Import;
 import com.google.gwt.resources.client.CssResource.ImportedWithPrefix;
+import com.google.gwt.resources.client.CssResource.Shared;
 import com.google.gwt.resources.client.GssResource;
 import com.google.gwt.resources.client.ResourcePrototype;
 import com.google.gwt.resources.ext.ClientBundleRequirements;
@@ -212,6 +213,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   private static final String KEY_OBFUSCATION_PREFIX = "CssResource.obfuscationPrefix";
   private static final String KEY_CLASS_PREFIX = "cssResourcePrefix";
   private static final String KEY_BY_CLASS_AND_METHOD = "cssResourceClassAndMethod";
+  private static final String KEY_HAS_CACHED_DATA = "hasCachedData";
+  private static final String KEY_SHARED_METHODS = "sharedMethods";
   private static final char[] BASE32_CHARS = new char[]{
       'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
       'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', '0', '1',
@@ -246,6 +249,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   // TODO add the possiblity to the developper to define his own at-rule ?
   private Set<String> allowedAtRules;
   private Map<JClassType, Map<String, String>> replacementsByClassAndMethod;
+  private Map<JMethod, String> replacementsForSharedMethods;
 
   @Override
   public String createAssignment(TreeLogger logger, ResourceContext context, JMethod method)
@@ -316,12 +320,17 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   }
 
   private void initReplacement(ResourceContext context) {
-    replacementsByClassAndMethod = context.getCachedData(KEY_BY_CLASS_AND_METHOD, Map.class);
+    if (context.getCachedData(KEY_HAS_CACHED_DATA, Boolean.class) != Boolean.TRUE) {
 
-    if (replacementsByClassAndMethod == null) {
-      replacementsByClassAndMethod = new IdentityHashMap<JClassType, Map<String, String>>();
-      context.putCachedData(KEY_BY_CLASS_AND_METHOD, replacementsByClassAndMethod);
+      context.putCachedData(KEY_SHARED_METHODS, new IdentityHashMap<JMethod, String>());
+      context.putCachedData(KEY_BY_CLASS_AND_METHOD, new IdentityHashMap<JClassType, Map<String,
+          String>>());
+      context.putCachedData(KEY_HAS_CACHED_DATA, Boolean.TRUE);
     }
+
+    replacementsByClassAndMethod = context.getCachedData(KEY_BY_CLASS_AND_METHOD, Map.class);
+    replacementsForSharedMethods = context.getCachedData(KEY_SHARED_METHODS,
+        Map.class);
   }
 
   private String getObfuscationPrefix(PropertyOracle propertyOracle, ResourceContext context)
@@ -893,18 +902,35 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
         if (method == getNameMethod || method == getTextMethod || method == ensuredInjectedMethod) {
           continue;
         }
+
         String styleClass = getClassName(method);
-        replacements.put(styleClass, prefixingSubstitutionMap.get(styleClass));
+
+        if (replacementsForSharedMethods.containsKey(method)) {
+          replacements.put(styleClass, replacementsForSharedMethods.get(method));
+        } else {
+          String obfuscatedClassName = prefixingSubstitutionMap.get(styleClass);
+          replacements.put(styleClass, obfuscatedClassName);
+          maybeHandleSharedMethod(method, obfuscatedClassName);
+        }
       }
     }
 
     return replacements;
   }
 
+  private void maybeHandleSharedMethod(JMethod method, String obfuscatedClassName) {
+    JClassType enclosingType = method.getEnclosingType();
+    Shared shared = enclosingType.getAnnotation(Shared.class);
+
+    if (shared != null) {
+      replacementsForSharedMethods.put(method, obfuscatedClassName);
+    }
+  }
+
   /**
    * Returns the import prefix for a type, including the trailing hyphen.
    */
-  public static String getImportPrefix(JClassType importType) {
+  private String getImportPrefix(JClassType importType) {
     String prefix = importType.getSimpleSourceName();
     ImportedWithPrefix exp = importType.getAnnotation(ImportedWithPrefix.class);
     if (exp != null) {
