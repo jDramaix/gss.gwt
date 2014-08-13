@@ -70,6 +70,15 @@ public interface TestResources extends ClientBundle {
     String nonSharedClassName();
   }
 
+  interface CssWithConstant extends GssResource {
+    String constantOne();
+    int constantTwo();
+    String CONSTANT_THREE();
+
+    String className1();
+    String conflictConstantClass();
+  }
+
   ClassNameAnnotation classNameAnnotation();
 
   SomeGssResource mixin();
@@ -97,4 +106,6 @@ public interface TestResources extends ClientBundle {
   TestImportCss testImportCss();
 
   SharedChild3 sharedChild3();
+
+  CssWithConstant cssWithConstant();
 }

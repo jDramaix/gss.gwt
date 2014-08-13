@@ -161,6 +161,14 @@ public class GssResourceTest extends GWTTestCase {
         res.sharedGreatChild().nonSharedClassName());
   }
 
+  public void testConstants() {
+    assertEquals("15px", res().cssWithConstant().constantOne());
+    assertEquals(5, res().cssWithConstant().constantTwo());
+    assertEquals("black", res().cssWithConstant().CONSTANT_THREE());
+
+    assertNotSame("white", res().cssWithConstant().conflictConstantClass());
+  }
+
   private TestResources res() {
     return GWT.create(TestResources.class);
   }
