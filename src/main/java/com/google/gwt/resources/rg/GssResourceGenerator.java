@@ -30,7 +30,6 @@ import com.google.common.collect.Sets;
 import com.google.common.css.IdentitySubstitutionMap;
 import com.google.common.css.MinimalSubstitutionMap;
 import com.google.common.css.PrefixingSubstitutionMap;
-import com.google.common.css.RecordingSubstitutionMap;
 import com.google.common.css.SourceCode;
 import com.google.common.css.SourceCodeLocation;
 import com.google.common.css.SubstitutionMap;
@@ -91,6 +90,10 @@ import com.google.gwt.dev.util.Util;
 import com.google.gwt.i18n.client.LocaleInfo;
 import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.resources.client.CssResource.ClassName;
+import com.google.gwt.resources.client.CssResource.Import;
+import com.google.gwt.resources.client.CssResource.ImportedWithPrefix;
+import com.google.gwt.resources.client.CssResource.NotStrict;
+import com.google.gwt.resources.client.CssResource.Shared;
 import com.google.gwt.resources.client.GssResource;
 import com.google.gwt.resources.client.ResourcePrototype;
 import com.google.gwt.resources.ext.ClientBundleRequirements;
@@ -103,6 +106,7 @@ import com.google.gwt.resources.gss.GwtGssFunctionMapProvider;
 import com.google.gwt.resources.gss.ImageSpriteCreator;
 import com.google.gwt.resources.gss.PermutationsCollector;
 import com.google.gwt.resources.gss.RecordingBidiFlipper;
+import com.google.gwt.resources.gss.RenamingSubstitutionMap;
 import com.google.gwt.resources.rg.CssResourceGenerator.JClassOrderComparator;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.gwt.user.rebind.StringSourceWriter;
@@ -110,6 +114,7 @@ import com.google.gwt.user.rebind.StringSourceWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -197,6 +202,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       .softValues().build();
   private static final Cache<List<URL>, Long> LAST_MODIFIED_CACHE = CacheBuilder.newBuilder()
       .build();
+
   // TO be sure to avoid conflict during the style classes renaming between different GssResource,
   // we will create a different prefix for each GssResource. We use a MinimalSubstitutionMap
   // that will create a String with 1-6 characters in length but keeping the length of the prefix
@@ -206,8 +212,11 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   // TODO maybe define our own property ?
   private static final String KEY_STYLE = "CssResource.style";
   private static final String KEY_OBFUSCATION_PREFIX = "CssResource.obfuscationPrefix";
-  private static final String KEY_CLASS_PREFIX = "prefix";
-  private static final char[] BASE32_CHARS = new char[] {
+  private static final String KEY_CLASS_PREFIX = "cssResourcePrefix";
+  private static final String KEY_BY_CLASS_AND_METHOD = "cssResourceClassAndMethod";
+  private static final String KEY_HAS_CACHED_DATA = "hasCachedData";
+  private static final String KEY_SHARED_METHODS = "sharedMethods";
+  private static final char[] BASE32_CHARS = new char[]{
       'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
       'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', '0', '1',
       '2', '3', '4', '5', '6'};
@@ -240,16 +249,18 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   private boolean obfuscateClassName;
   // TODO add the possiblity to the developper to define his own at-rule ?
   private Set<String> allowedAtRules;
+  private Map<JClassType, Map<String, String>> replacementsByClassAndMethod;
+  private Map<JMethod, String> replacementsForSharedMethods;
 
   @Override
   public String createAssignment(TreeLogger logger, ResourceContext context, JMethod method)
       throws UnableToCompleteException {
     ExtendedCssTree extendedCssTree = cssTreeMap.get(method);
 
-    // TODO check if this can be done earlier (in the prepare method) ?
-    Map<String, String> substitutionMap = doClassRenaming(extendedCssTree.getCssTree(), method);
+    Map<String, String> substitutionMap = doClassRenaming(extendedCssTree.getCssTree(),
+        method, logger, context);
 
-    // TODO : Should we foresee configuration properties for simplyfyCss and eliminateDeadCode
+    // TODO : Should we foresee configuration properties for simplifyCss and eliminateDeadCode
     // booleans ?
     OptimizationInfo optimizationInfo = optimize(extendedCssTree, context, true, true);
 
@@ -305,6 +316,22 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
           "ResourcePrototype interface", e);
       throw new UnableToCompleteException();
     }
+
+    initReplacement(context);
+  }
+
+  private void initReplacement(ResourceContext context) {
+    if (context.getCachedData(KEY_HAS_CACHED_DATA, Boolean.class) != Boolean.TRUE) {
+
+      context.putCachedData(KEY_SHARED_METHODS, new IdentityHashMap<JMethod, String>());
+      context.putCachedData(KEY_BY_CLASS_AND_METHOD, new IdentityHashMap<JClassType, Map<String,
+          String>>());
+      context.putCachedData(KEY_HAS_CACHED_DATA, Boolean.TRUE);
+    }
+
+    replacementsByClassAndMethod = context.getCachedData(KEY_BY_CLASS_AND_METHOD, Map.class);
+    replacementsForSharedMethods = context.getCachedData(KEY_SHARED_METHODS,
+        Map.class);
   }
 
   private String getObfuscationPrefix(PropertyOracle propertyOracle, ResourceContext context)
@@ -369,7 +396,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       throw new UnableToCompleteException();
     }
 
-    URL[] resourceUrls =  ResourceGeneratorUtil.findResources(logger, context, method);
+    URL[] resourceUrls = ResourceGeneratorUtil.findResources(logger, context, method);
     if (resourceUrls.length == 0) {
       logger.log(TreeLogger.ERROR, "At least one source must be specified");
       throw new UnableToCompleteException();
@@ -447,38 +474,26 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     return new CssTree(cssTree.getSourceCode(), cssTree.getRoot().deepCopy());
   }
 
-  private Map<String, String> doClassRenaming(CssTree cssTree, JMethod method) {
+  private Map<String, String> doClassRenaming(CssTree cssTree, JMethod method, TreeLogger logger,
+      ResourceContext context) throws UnableToCompleteException {
+    Map<String, Map<String, String>> replacementsWithPrefix = computeReplacements(method, logger,
+        context);
+
     Set<String> externalClasses = collectExternalClasses(cssTree);
 
-    // for the time being, either we don 't rename the classes either we obfuscate them
-    // we can (and should) implement our own SubstitutionMap to handle another obfuscation scheme
-    SubstitutionMap substitutionMap;
-    if (obfuscateClassName) {
-      // it renames CSS classes to the shortest string possible. No conflict possible
-      substitutionMap = new MinimalSubstitutionMap();
-    } else {
-      // map the class name to itself (no renaming)
-      substitutionMap = new IdentitySubstitutionMap();
+    RenamingSubstitutionMap substitutionMap = new RenamingSubstitutionMap(replacementsWithPrefix,
+        externalClasses, isStrictResource(method), logger);
+
+    new CssClassRenaming(cssTree.getMutatingVisitController(), substitutionMap, null).runPass();
+
+    if (substitutionMap.hasError()) {
+      throw new UnableToCompleteException();
     }
 
-    // TODO: compute an automatic  obfuscation prefix if the obfuscationPrefix is null
-    if (obfuscationPrefix == null) {
-      obfuscationPrefix = "";
-    }
+    Map<String, String> mapping = replacementsWithPrefix.get("");
 
-    String resourcePrefix = resourcePrefixBuilder.get(method.getReturnType()
-        .getQualifiedSourceName());
-    // This substitution map will prefix each renamed class with the resource prefix
-    SubstitutionMap prefixingSubstitutionMap = new PrefixingSubstitutionMap(substitutionMap,
-        obfuscationPrefix + resourcePrefix + "-");
-
-    RecordingSubstitutionMap recordingSubstitutionMap = new RecordingSubstitutionMap
-        (prefixingSubstitutionMap, Predicates.not(Predicates.in(externalClasses)));
-
-    new CssClassRenaming(cssTree.getMutatingVisitController(), recordingSubstitutionMap, null)
-        .runPass();
-
-    Map<String, String> mapping = Maps.newHashMap(recordingSubstitutionMap.getMappings());
+    mapping = Maps.newHashMap(Maps.filterKeys(mapping, Predicates.in(substitutionMap
+        .getStyleClasses())));
 
     // add external classes in the mapping
     for (String external : externalClasses) {
@@ -486,6 +501,11 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
 
     return mapping;
+  }
+
+  private boolean isStrictResource(JMethod method) {
+    NotStrict notStrict = method.getAnnotation(NotStrict.class);
+    return notStrict == null;
   }
 
   private Set<String> collectExternalClasses(CssTree cssTree) {
@@ -532,7 +552,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   }
 
   private OptimizationInfo optimize(ExtendedCssTree extendedCssTree, ResourceContext context,
-      boolean simplifyCss,  boolean eliminateDeadStyles) {
+      boolean simplifyCss, boolean eliminateDeadStyles) {
     CssTree cssTree = extendedCssTree.getCssTree();
 
     // Collect mixin definitions and replace mixins
@@ -793,7 +813,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     // method to access constant value ?
     ConstantDefinitions constantDefinitions = optimizationInfo.constantDefinitions;
-    CssDefinitionNode definitionNode = constantDefinitions.getConstantDefinition(userMethod.getName());
+    CssDefinitionNode definitionNode =
+        constantDefinitions.getConstantDefinition(userMethod.getName());
 
     if (definitionNode == null) {
       // try with upper case
@@ -805,17 +826,123 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
 
     // the method doesn't match a style class nor a constant
-    logger.log(Type.ERROR, "The following method [" + userMethod.getName() + "()] doesn't match a constant" +
-        " nor a style class. You could fix that by adding ." + className + " {}");
+    logger.log(Type.ERROR,
+        "The following method [" + userMethod.getName() + "()] doesn't match a constant" +
+            " nor a style class. You could fix that by adding ." + className + " {}"
+    );
     return false;
   }
 
   /**
    * Transform a camel case string to upper case. Each word is separated by a '_'
+   *
    * @param camelCase
    * @return
    */
   private String toUpperCase(String camelCase) {
     return CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, camelCase);
+  }
+
+  private Map<String, Map<String, String>> computeReplacements(JMethod method, TreeLogger logger,
+      ResourceContext context) throws UnableToCompleteException {
+    Map<String, Map<String, String>> replacementsWithPrefix = new HashMap<String, Map<String,
+        String>>();
+
+    replacementsWithPrefix
+        .put("", computeReplacementsForType(method.getReturnType().isInterface()));
+
+    // Process the Import annotation if any
+    Import imp = method.getAnnotation(Import.class);
+
+    if (imp != null) {
+      boolean fail = false;
+      TypeOracle typeOracle = context.getGeneratorContext().getTypeOracle();
+
+      for (Class<? extends CssResource> clazz : imp.value()) {
+        JClassType importType = typeOracle.findType(clazz.getName().replace('$', '.'));
+        assert importType != null : "TypeOracle does not have type " + clazz.getName();
+
+        // add this import type as a requirement for this generator
+        context.getRequirements().addTypeHierarchy(importType);
+
+        String prefix = getImportPrefix(importType);
+
+        if (replacementsWithPrefix.put(prefix, computeReplacementsForType(importType)) != null) {
+          logger.log(TreeLogger.ERROR, "Multiple imports that would use the prefix " + prefix);
+          fail = true;
+        }
+      }
+
+      if (fail) {
+        throw new UnableToCompleteException();
+      }
+    }
+
+    return replacementsWithPrefix;
+  }
+
+  private Map<String, String> computeReplacementsForType(JClassType cssResource) {
+    Map<String, String> replacements = replacementsByClassAndMethod.get(cssResource);
+
+    if (replacements == null) {
+      replacements = new HashMap<String, String>();
+      replacementsByClassAndMethod.put(cssResource, replacements);
+
+      // for the time being, either we don 't rename the classes either we obfuscate them
+      // we can (and should) implement our own SubstitutionMap to handle another obfuscation scheme
+      SubstitutionMap substitutionMap;
+      if (obfuscateClassName) {
+        // it renames CSS classes to the shortest string possible. No conflict possible
+        substitutionMap = new MinimalSubstitutionMap();
+      } else {
+        // map the class name to itself (no renaming)
+        substitutionMap = new IdentitySubstitutionMap();
+      }
+
+      String resourcePrefix = resourcePrefixBuilder.get(cssResource.getQualifiedSourceName());
+      // This substitution map will prefix each renamed class with the resource prefix
+      SubstitutionMap prefixingSubstitutionMap = new PrefixingSubstitutionMap(substitutionMap,
+          obfuscationPrefix + resourcePrefix + "-");
+
+      for (JMethod method : cssResource.getOverridableMethods()) {
+        if (method == getNameMethod || method == getTextMethod || method == ensuredInjectedMethod) {
+          continue;
+        }
+
+        String styleClass = getClassName(method);
+
+        if (replacementsForSharedMethods.containsKey(method)) {
+          replacements.put(styleClass, replacementsForSharedMethods.get(method));
+        } else {
+          String obfuscatedClassName = prefixingSubstitutionMap.get(styleClass);
+          replacements.put(styleClass, obfuscatedClassName);
+          maybeHandleSharedMethod(method, obfuscatedClassName);
+        }
+      }
+    }
+
+    return replacements;
+  }
+
+  private void maybeHandleSharedMethod(JMethod method, String obfuscatedClassName) {
+    JClassType enclosingType = method.getEnclosingType();
+    Shared shared = enclosingType.getAnnotation(Shared.class);
+
+    if (shared != null) {
+      replacementsForSharedMethods.put(method, obfuscatedClassName);
+    }
+  }
+
+  /**
+   * Returns the import prefix for a type, including the trailing hyphen.
+   */
+  private String getImportPrefix(JClassType importType) {
+    String prefix = importType.getSimpleSourceName();
+    ImportedWithPrefix exp = importType.getAnnotation(ImportedWithPrefix.class);
+    if (exp != null) {
+      prefix = exp.value();
+    }
+
+    return prefix + "-";
   }
 }

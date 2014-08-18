@@ -16,12 +16,16 @@
 
 package com.google.gwt.resources.client;
 
+import com.google.gwt.resources.client.CssResource.Import;
+import com.google.gwt.resources.client.CssResource.NotStrict;
+import com.google.gwt.resources.client.ScopeResource.SharedParent;
+
 public interface TestResources extends ClientBundle {
-  public interface SomeGssResource extends GssResource {
+  interface SomeGssResource extends GssResource {
     String someClass();
   }
 
-  public interface SpriteGssResource extends GssResource {
+  interface SpriteGssResource extends GssResource {
     String someClassWithSprite();
 
     // define a style class having the same name than another resource in the ClientBundle
@@ -29,7 +33,7 @@ public interface TestResources extends ClientBundle {
     String someImageResource();
   }
 
-  public interface ExternalClasses extends GssResource {
+  interface ExternalClasses extends GssResource {
     String obfuscatedClass();
 
     String externalClass();
@@ -41,21 +45,39 @@ public interface TestResources extends ClientBundle {
     String unobfuscated2();
   }
 
-  public interface EmptyClass extends GssResource {
+  interface EmptyClass extends GssResource {
     String empty();
   }
 
-  public interface WithConstant extends GssResource {
+  interface WithConstant extends GssResource {
     String constantOne();
 
     String classOne();
   }
 
-  public interface ClassNameAnnotation extends GssResource {
+  interface ClassNameAnnotation extends GssResource {
     @ClassName("renamed-class")
     String renamedClass();
 
     String nonRenamedClass();
+  }
+
+  interface TestImportCss extends GssResource {
+    String other();
+  }
+
+  // used to test shared annotation between clientBundle
+  interface SharedChild3 extends SharedParent {
+    String nonSharedClassName();
+  }
+
+  interface CssWithConstant extends GssResource {
+    String constantOne();
+    int constantTwo();
+    String CONSTANT_THREE();
+
+    String className1();
+    String conflictConstantClass();
   }
 
   ClassNameAnnotation classNameAnnotation();
@@ -80,4 +102,14 @@ public interface TestResources extends ClientBundle {
 
   @Source("bananaguitar.ani")
   DataResource someDataResource();
+
+  @Import({ImportResource.ImportWithPrefixCss.class, ImportResource.ImportCss.class})
+  TestImportCss testImportCss();
+
+  SharedChild3 sharedChild3();
+
+  CssWithConstant cssWithConstant();
+
+  @NotStrict
+  SomeGssResource notstrict();
 }
