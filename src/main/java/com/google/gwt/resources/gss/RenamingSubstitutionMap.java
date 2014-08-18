@@ -29,13 +29,15 @@ import java.util.Set;
 
 public class RenamingSubstitutionMap implements SubstitutionMap {
   private final Map<String, String> replacementMap;
+  private final boolean isStrict;
   private final TreeLogger logger;
 
   private boolean hasError;
   private Set<String> classes;
 
   public RenamingSubstitutionMap(Map<String, Map<String, String>> replacementsWithPrefix,
-      Collection<String> externalClasses, TreeLogger logger) {
+      Collection<String> externalClasses, boolean isStrict, TreeLogger logger) {
+    this.isStrict = isStrict;
     this.logger = logger;
     this.replacementMap = computeReplacementMap(replacementsWithPrefix, externalClasses);
 
@@ -73,10 +75,12 @@ public class RenamingSubstitutionMap implements SubstitutionMap {
     String replacement = replacementMap.get(key);
 
     if (replacement == null) {
-      logger.log(Type.ERROR, "The following style class doesn't have any method associated to it:" +
-          key);
-      hasError = true;
-      return null;
+      if (isStrict) {
+        logger.log(Type.ERROR, "The following unobfuscated classes were present in a strict " +
+            "CssResource: " + key);
+        hasError = true;
+      }
+      return key;
     }
 
     return replacement;

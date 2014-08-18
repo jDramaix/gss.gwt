@@ -16,6 +16,8 @@
 
 package com.google.gwt.resources.client;
 
+import com.google.gwt.resources.client.CssResource.Shared;
+
 public interface ScopeResource extends ClientBundle {
   interface ScopeA extends GssResource {
     String foo();
@@ -28,6 +30,32 @@ public interface ScopeResource extends ClientBundle {
   interface ScopeC extends ScopeA {
     // Intentionally not defining foo()
   }
+
+  @Shared
+  interface SharedParent extends GssResource {
+    String sharedClassName1();
+    String sharedClassName2();
+  }
+
+  interface SharedChild1 extends SharedParent {
+    String nonSharedClassName();
+  }
+
+  interface SharedChild2 extends SharedParent {
+    String nonSharedClassName();
+  }
+
+  interface SharedGreatChild extends SharedChild2 {
+    // Intentionally empty
+  }
+
+  SharedChild1 sharedChild1();
+
+  SharedChild2 sharedChild2();
+
+  SharedGreatChild sharedGreatChild();
+
+  SharedParent sharedParent();
 
   ScopeA scopeA();
 
