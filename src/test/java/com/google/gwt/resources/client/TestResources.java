@@ -17,6 +17,7 @@
 package com.google.gwt.resources.client;
 
 import com.google.gwt.resources.client.CssResource.Import;
+import com.google.gwt.resources.client.CssResource.NotStrict;
 import com.google.gwt.resources.client.ScopeResource.SharedParent;
 
 public interface TestResources extends ClientBundle {
@@ -70,6 +71,15 @@ public interface TestResources extends ClientBundle {
     String nonSharedClassName();
   }
 
+  interface CssWithConstant extends GssResource {
+    String constantOne();
+    int constantTwo();
+    String CONSTANT_THREE();
+
+    String className1();
+    String conflictConstantClass();
+  }
+
   ClassNameAnnotation classNameAnnotation();
 
   SomeGssResource mixin();
@@ -97,4 +107,9 @@ public interface TestResources extends ClientBundle {
   TestImportCss testImportCss();
 
   SharedChild3 sharedChild3();
+
+  CssWithConstant cssWithConstant();
+
+  @NotStrict
+  SomeGssResource notstrict();
 }

@@ -21,6 +21,7 @@ import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.resources.client.TestResources.ClassNameAnnotation;
 import com.google.gwt.resources.client.TestResources.EmptyClass;
 import com.google.gwt.resources.client.TestResources.ExternalClasses;
+import com.google.gwt.resources.client.TestResources.SomeGssResource;
 import com.google.gwt.resources.client.TestResources.TestImportCss;
 import com.google.gwt.resources.client.TestResources.WithConstant;
 
@@ -159,6 +160,23 @@ public class GssResourceTest extends GWTTestCase {
         res2.sharedChild3().nonSharedClassName());
     assertNotSame(res2.sharedChild3().nonSharedClassName(),
         res.sharedGreatChild().nonSharedClassName());
+  }
+
+  public void testConstants() {
+    assertEquals("15px", res().cssWithConstant().constantOne());
+    assertEquals(5, res().cssWithConstant().constantTwo());
+    assertEquals("black", res().cssWithConstant().CONSTANT_THREE());
+
+    assertNotSame("white", res().cssWithConstant().conflictConstantClass());
+  }
+
+  public void testNotStrict() {
+    SomeGssResource notStrict = res().notstrict();
+
+    String expectedCss = "." + notStrict.someClass() + "{color:black}.otherNotStrictClass{" +
+        "color:white}";
+
+    assertEquals(expectedCss, notStrict.getText());
   }
 
   private TestResources res() {
