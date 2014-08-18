@@ -17,6 +17,7 @@
 package com.google.gwt.resources.client;
 
 import com.google.gwt.resources.client.CssResource.Import;
+import com.google.gwt.resources.client.CssResource.NotStrict;
 import com.google.gwt.resources.client.ScopeResource.SharedParent;
 
 public interface TestResources extends ClientBundle {
@@ -108,4 +109,7 @@ public interface TestResources extends ClientBundle {
   SharedChild3 sharedChild3();
 
   CssWithConstant cssWithConstant();
+
+  @NotStrict
+  SomeGssResource notstrict();
 }

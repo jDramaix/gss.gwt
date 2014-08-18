@@ -92,6 +92,7 @@ import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.resources.client.CssResource.ClassName;
 import com.google.gwt.resources.client.CssResource.Import;
 import com.google.gwt.resources.client.CssResource.ImportedWithPrefix;
+import com.google.gwt.resources.client.CssResource.NotStrict;
 import com.google.gwt.resources.client.CssResource.Shared;
 import com.google.gwt.resources.client.GssResource;
 import com.google.gwt.resources.client.ResourcePrototype;
@@ -481,7 +482,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     Set<String> externalClasses = collectExternalClasses(cssTree);
 
     RenamingSubstitutionMap substitutionMap = new RenamingSubstitutionMap(replacementsWithPrefix,
-        externalClasses, logger);
+        externalClasses, isStrictResource(method), logger);
 
     new CssClassRenaming(cssTree.getMutatingVisitController(), substitutionMap, null).runPass();
 
@@ -500,6 +501,11 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
 
     return mapping;
+  }
+
+  private boolean isStrictResource(JMethod method) {
+    NotStrict notStrict = method.getAnnotation(NotStrict.class);
+    return notStrict == null;
   }
 
   private Set<String> collectExternalClasses(CssTree cssTree) {
