@@ -31,9 +31,18 @@ import java.net.URL;
 public class Css2GssTest {
 
   @Test
-  public void test() throws IOException {
+  public void testInlineBlockCssEscaping() throws IOException {
     URL resource = Css2GssTest.class.getResource("inline-block.css");
     InputStream stream = Css2GssTest.class.getResourceAsStream("inline-block.gss");
+    String convertedGss = new Css2Gss(resource, new PrintWriter(System.err)).toGss();
+    String gss = IOUtils.toString(stream, "UTF-8");
+    Assert.assertEquals(gss, convertedGss);
+  }
+
+  @Test
+  public void testMultipleDeclarationOfSameProperty() throws IOException {
+    URL resource = Css2GssTest.class.getResource("multiple_declarations.css");
+    InputStream stream = Css2GssTest.class.getResourceAsStream("multiple_declarations.gss");
     String convertedGss = new Css2Gss(resource, new PrintWriter(System.err)).toGss();
     String gss = IOUtils.toString(stream, "UTF-8");
     Assert.assertEquals(gss, convertedGss);

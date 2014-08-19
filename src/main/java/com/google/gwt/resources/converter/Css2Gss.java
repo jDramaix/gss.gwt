@@ -49,6 +49,7 @@ public class Css2Gss {
       defCollectorVisitor.accept(sheet);
 
       new ElseNodeCreator().accept(sheet);
+      new AlternateAnnotationCreatorVisitor().accept(sheet);
 
       GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(new DefaultTextOutput
           (false), defCollectorVisitor.getDefMapping());
