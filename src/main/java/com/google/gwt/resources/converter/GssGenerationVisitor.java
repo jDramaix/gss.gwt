@@ -34,6 +34,7 @@ import com.google.gwt.resources.css.ast.CssMediaRule;
 import com.google.gwt.resources.css.ast.CssNoFlip;
 import com.google.gwt.resources.css.ast.CssPageRule;
 import com.google.gwt.resources.css.ast.CssProperty;
+import com.google.gwt.resources.css.ast.CssStylesheet;
 import com.google.gwt.resources.css.ast.CssProperty.DotPathValue;
 import com.google.gwt.resources.css.ast.CssProperty.Value;
 import com.google.gwt.resources.css.ast.CssRule;
@@ -44,6 +45,7 @@ import com.google.gwt.resources.css.ast.CssUrl;
 
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
 import java.util.regex.Pattern;
 
 public class GssGenerationVisitor extends ExtendedCssVisitor {
@@ -76,11 +78,14 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private boolean needsOpenBrace;
   private boolean needsComma;
   private boolean inUrl;
+  private SortedSet<String> externalClassDefs;
 
-  public GssGenerationVisitor(TextOutput out, Map<String, String> defKeyMapping, boolean lenient) {
+  public GssGenerationVisitor(TextOutput out, Map<String, String> defKeyMapping,
+      SortedSet<String> externalClassDefs, boolean lenient) {
     this.defKeyMapping = defKeyMapping;
     this.out = out;
     this.lenient = lenient;
+    this.externalClassDefs = externalClassDefs;
     newLine = true;
   }
 
@@ -130,6 +135,32 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   @Override
   public boolean visit(CssSprite x, Context ctx) {
     return false;
+  }
+
+  @Override
+  public boolean visit(CssStylesheet x, Context ctx) {
+    if(externalClassDefs.isEmpty()) {
+      return true;
+    }
+
+    out.print(EXTERNAL);
+    for (String className : externalClassDefs) {
+      out.print(" ");
+
+      boolean needQuote = className.endsWith("*");
+
+      if (needQuote) {
+        out.print("'");
+      }
+
+      out.printOpt(className);
+
+      if (needQuote) {
+        out.print("'");
+      }
+    }
+    semiColon();
+    return true;
   }
 
   @Override
@@ -293,28 +324,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     out.print("@font-face");
     openBrace();
     return true;
-  }
-
-  @Override
-  public boolean visit(CssExternalSelectors x, Context ctx) {
-    out.print(EXTERNAL);
-    for (String className : x.getClasses()) {
-      out.print(" ");
-
-      boolean needQuote = className.endsWith("*");
-
-      if (needQuote) {
-        out.print("'");
-      }
-
-      out.printOpt(className);
-
-      if (needQuote) {
-        out.print("'");
-      }
-    }
-    semiColon();
-    return false;
   }
 
   @Override

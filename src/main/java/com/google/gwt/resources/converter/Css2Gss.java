@@ -18,6 +18,7 @@ package com.google.gwt.resources.converter;
 
 import com.google.gwt.dev.util.DefaultTextOutput;
 import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
+import com.google.gwt.resources.css.ExternalClassesCollector;
 import com.google.gwt.resources.css.GenerateCssAst;
 import com.google.gwt.resources.css.ast.CssStylesheet;
 
@@ -25,6 +26,9 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.SortedSet;
 
 /**
  * Converter from Css to Gss
@@ -54,12 +58,17 @@ public class Css2Gss {
       DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor();
       defCollectorVisitor.accept(sheet);
 
+      ExternalClassesCollector externalClassesCollector = new ExternalClassesCollector();
+      externalClassesCollector.accept(sheet);
+      SortedSet<String> classes = externalClassesCollector.getClasses();
+      removeWrongEntries(classes);
+
       new ElseNodeCreator().accept(sheet);
       new AlternateAnnotationCreatorVisitor().accept(sheet);
       new FontFamilyVisitor().accept(sheet);
 
       GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(new DefaultTextOutput
-          (false), defCollectorVisitor.getDefMapping(), lenient);
+          (false), defCollectorVisitor.getDefMapping(), classes, lenient);
       gssGenerationVisitor.accept(sheet);
 
       return gssGenerationVisitor.getContent();
@@ -67,6 +76,23 @@ public class Css2Gss {
       printWriter.flush();
       throw new RuntimeException(e);
     }
+  }
+
+  private void removeWrongEntries(SortedSet<String> classes) {
+    Set<String> toRemove = new HashSet<String>();
+    Set<String> toAdd = new HashSet<String>();
+    for (String entry : classes) {
+      if(entry.contains("@external")){
+        toRemove.add(entry);
+        entry = entry.replace("@external", "");
+        entry = entry.replace(",", "");
+        entry = entry.replace("\n", "");
+        entry = entry.replace("\r", "");
+        toAdd.add(entry);
+      }
+    }
+    classes.removeAll(toRemove);
+    classes.addAll(toAdd);
   }
 
   public static void main(String... args) {
