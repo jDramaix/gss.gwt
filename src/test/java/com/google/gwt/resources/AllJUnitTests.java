@@ -17,7 +17,6 @@ package com.google.gwt.resources;
 
 import com.google.gwt.resources.converter.DefCollectorVisitorTest;
 import com.google.gwt.resources.converter.ElseNodeCreatorTest;
-import com.google.gwt.resources.gss.CreateRuntimeConditionalNodesTest;
 import com.google.gwt.resources.gss.ExternalClassesCollectorTest;
 
 import com.google.gwt.resources.gss.RenamingSubstitutionMapTest;
@@ -30,7 +29,6 @@ import org.junit.runners.Suite.SuiteClasses;
     DefCollectorVisitorTest.class,
     ElseNodeCreatorTest.class,
     ExternalClassesCollectorTest.class,
-    RenamingSubstitutionMapTest.class,
-    CreateRuntimeConditionalNodesTest.class})
+    RenamingSubstitutionMapTest.class})
 public class AllJUnitTests {
 }
