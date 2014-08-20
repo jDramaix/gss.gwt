@@ -21,8 +21,10 @@ import com.google.gwt.resources.client.CssResource.NotStrict;
 import com.google.gwt.resources.client.ScopeResource.SharedParent;
 
 public interface TestResources extends ClientBundle {
-  public static boolean TRUE = true;
-  public static boolean FALSE = false;
+  public interface ImageResources extends ClientBundle {
+        @Source("someImageResource.png")
+        ImageResource someResource();
+  }
 
   interface SomeGssResource extends GssResource {
     String someClass();
@@ -30,6 +32,8 @@ public interface TestResources extends ClientBundle {
 
   interface SpriteGssResource extends GssResource {
     String someClassWithSprite();
+
+    String embeddedSprite();
 
     // define a style class having the same name than another resource in the ClientBundle
     // test possible conflict
@@ -121,4 +125,6 @@ public interface TestResources extends ClientBundle {
   SomeGssResource notstrict();
 
   RuntimeConditional runtimeConditional();
+
+  ImageResources embeddedImageResources();
 }
