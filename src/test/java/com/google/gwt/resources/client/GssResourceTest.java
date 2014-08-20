@@ -21,6 +21,7 @@ import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.resources.client.TestResources.ClassNameAnnotation;
 import com.google.gwt.resources.client.TestResources.EmptyClass;
 import com.google.gwt.resources.client.TestResources.ExternalClasses;
+import com.google.gwt.resources.client.TestResources.RuntimeConditional;
 import com.google.gwt.resources.client.TestResources.SomeGssResource;
 import com.google.gwt.resources.client.TestResources.TestImportCss;
 import com.google.gwt.resources.client.TestResources.WithConstant;
@@ -177,6 +178,44 @@ public class GssResourceTest extends GWTTestCase {
         "color:white}";
 
     assertEquals(expectedCss, notStrict.getText());
+  }
+
+  public void testRuntimeConditional() {
+    RuntimeConditional runtimeConditional = res().runtimeConditional();
+    String foo = runtimeConditional.foo();
+
+    BooleanEval.FIRST = true;
+    BooleanEval.SECOND = true;
+    BooleanEval.THIRD = true;
+
+    assertEquals(runtimeExpectedCss("purple", "20px", foo), runtimeConditional.getText());
+
+    BooleanEval.FIRST = false;
+    BooleanEval.SECOND = true;
+    BooleanEval.THIRD = true;
+
+    assertEquals(runtimeExpectedCss("black", null, foo), runtimeConditional.getText());
+
+    BooleanEval.FIRST = false;
+    BooleanEval.SECOND = true;
+    BooleanEval.THIRD = false;
+
+    assertEquals(runtimeExpectedCss("khaki", null, foo), runtimeConditional.getText());
+
+    BooleanEval.FIRST = false;
+    BooleanEval.SECOND = false;
+
+    assertEquals(runtimeExpectedCss("gray", null, foo), runtimeConditional.getText());
+  }
+
+  private String runtimeExpectedCss(String color, String padding, String foo) {
+    String s =  "." + foo +  "{width:100%}" + "." + foo +  "{color:" + color + "}";
+
+    if (padding != null) {
+      s += "." + foo + "{padding:"+ padding + "}";
+    }
+
+    return s;
   }
 
   private TestResources res() {

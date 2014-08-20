@@ -16,6 +16,9 @@
 
 package com.google.gwt.resources.gss;
 
+import com.google.common.css.compiler.ast.CssAtRuleNode.Type;
+import com.google.common.css.compiler.ast.CssConditionalBlockNode;
+import com.google.common.css.compiler.ast.CssConditionalRuleNode;
 import com.google.common.css.compiler.ast.CssNode;
 import com.google.common.css.compiler.ast.CssRootNode;
 import com.google.common.css.compiler.ast.CssTree;
@@ -24,6 +27,9 @@ import com.google.common.css.compiler.passes.CompactPrinter;
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.resources.gss.ast.CssDotPathNode;
 import com.google.gwt.resources.gss.ast.CssJavaExpressionNode;
+import com.google.gwt.resources.gss.ast.CssRuntimeConditionalRuleNode;
+
+import java.util.Stack;
 
 public class CssPrinter extends CompactPrinter {
   /**
@@ -31,6 +37,10 @@ public class CssPrinter extends CompactPrinter {
    * tree by producing parenthetical expressions.
    */
   private static final int CONCAT_EXPRESSION_LIMIT = 20;
+  private static final String CONTATENATION_BLOCK = ") + (";
+  private static final String CONTATENATION = " + ";
+  private static final String LEFT_BRACKET = "(";
+  private static final String RIGHT_BRACKET = ")";
 
   private StringBuilder masterStringBuilder;
   private String css;
@@ -68,7 +78,62 @@ public class CssPrinter extends CompactPrinter {
 
     super.runPass();
 
-    css = masterStringBuilder.toString();
+    css = masterStringBuilder.toString().replaceAll(" \\+ \\(\"\"\\)", "");
+  }
+
+  Stack<Boolean> elseNodeFound = new Stack<Boolean>();
+
+  @Override
+  public boolean enterConditionalBlock(CssConditionalBlockNode node) {
+    masterStringBuilder.append(flushInternalStringBuilder());
+
+    masterStringBuilder.append(CONTATENATION_BLOCK);
+
+    elseNodeFound.push(false);
+
+    return true;
+  }
+
+  @Override
+  public void leaveConditionalBlock(CssConditionalBlockNode block) {
+    if (!elseNodeFound.pop()) {
+      masterStringBuilder.append("\"\"");
+    }
+    masterStringBuilder.append(CONTATENATION_BLOCK);
+
+    // reset concatenation counter
+    concatenationNumber = 0;
+  }
+
+  @Override
+  public boolean enterConditionalRule(CssConditionalRuleNode node) {
+    if (node.getType() == Type.ELSE) {
+      elseNodeFound.pop();
+      elseNodeFound.push(true);
+
+      masterStringBuilder.append(LEFT_BRACKET);
+    } else {
+      CssRuntimeConditionalRuleNode conditionalRuleNode = (CssRuntimeConditionalRuleNode) node;
+
+      masterStringBuilder.append(LEFT_BRACKET);
+      masterStringBuilder.append(conditionalRuleNode.getRuntimeCondition().getValue());
+      masterStringBuilder.append(") ? (");
+
+      // reset concatenation counter
+      concatenationNumber = 0;
+    }
+
+    return true;
+
+  }
+
+  @Override
+  public void leaveConditionalRule(CssConditionalRuleNode node) {
+    masterStringBuilder.append(flushInternalStringBuilder()).append(RIGHT_BRACKET);
+
+    if (node.getType() != Type.ELSE) {
+      masterStringBuilder.append(" : ");
+    }
   }
 
   @Override
@@ -93,10 +158,10 @@ public class CssPrinter extends CompactPrinter {
   private void appendConcatOperation() {
     // avoid long string concatenation chain
     if (concatenationNumber >= CONCAT_EXPRESSION_LIMIT) {
-      masterStringBuilder.append(") + (");
+      masterStringBuilder.append(CONTATENATION_BLOCK);
       concatenationNumber = 0;
     } else {
-      masterStringBuilder.append(" + ");
+      masterStringBuilder.append(CONTATENATION);
       concatenationNumber++;
     }
   }

@@ -21,6 +21,9 @@ import com.google.gwt.resources.client.CssResource.NotStrict;
 import com.google.gwt.resources.client.ScopeResource.SharedParent;
 
 public interface TestResources extends ClientBundle {
+  public static boolean TRUE = true;
+  public static boolean FALSE = false;
+
   interface SomeGssResource extends GssResource {
     String someClass();
   }
@@ -80,6 +83,10 @@ public interface TestResources extends ClientBundle {
     String conflictConstantClass();
   }
 
+  interface RuntimeConditional extends GssResource {
+    String foo();
+  }
+
   ClassNameAnnotation classNameAnnotation();
 
   SomeGssResource mixin();
@@ -112,4 +119,6 @@ public interface TestResources extends ClientBundle {
 
   @NotStrict
   SomeGssResource notstrict();
+
+  RuntimeConditional runtimeConditional();
 }

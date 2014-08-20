@@ -216,9 +216,8 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   @Override
   public boolean visit(CssElIf x, Context ctx) {
     closeBrace();
-    out.print(format(ELSE_IF, printConditionnalExpression(x)));
-    openBrace();
-    newLine = false;
+
+    openConditional(ELSE_IF, x);
 
     return true;
   }
@@ -231,20 +230,43 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssIf x, Context ctx) {
-    if (x.getExpression() != null) {
-      // TODO improve warning message system
-      System.out.println("Conditionnal css based on runtime evaluation is not supported yet. The " +
-          "following expression is skipped: " + x);
-      return false;
-    }
-
     out.newline();
-    out.print(format(IF, printConditionnalExpression(x)));
-    openBrace();
 
-    newLine = false;
+    openConditional(IF, x);
 
     return true;
+  }
+
+  private void openConditional(String template, CssIf ifOrElif) {
+    String condition;
+
+    String runtimeCondition = extractExpression(ifOrElif);
+
+    if (runtimeCondition != null) {
+      //con
+      condition = format(EVAL, runtimeCondition);
+    } else {
+      condition = printConditionnalExpression(ifOrElif);
+    }
+
+    out.print(format(template, condition));
+
+    openBrace();
+    newLine = false;
+  }
+
+  private String extractExpression(CssIf ifOrElif) {
+    String condition = ifOrElif.getExpression();
+
+    if (condition == null) {
+      return null;
+    }
+
+    if (condition.trim().startsWith("(")) {
+      condition = condition.substring(1, condition.length() - 1);
+    }
+
+    return condition;
   }
 
   @Override

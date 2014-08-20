@@ -56,7 +56,6 @@ import com.google.common.css.compiler.passes.CreateMixins;
 import com.google.common.css.compiler.passes.CreateStandardAtRuleNodes;
 import com.google.common.css.compiler.passes.CssClassRenaming;
 import com.google.common.css.compiler.passes.DisallowDuplicateDeclarations;
-import com.google.common.css.compiler.passes.EliminateConditionalNodes;
 import com.google.common.css.compiler.passes.EliminateEmptyRulesetNodes;
 import com.google.common.css.compiler.passes.EliminateUnitsFromZeroNumericValues;
 import com.google.common.css.compiler.passes.EliminateUselessRulesetNodes;
@@ -100,13 +99,16 @@ import com.google.gwt.resources.ext.ClientBundleRequirements;
 import com.google.gwt.resources.ext.ResourceContext;
 import com.google.gwt.resources.ext.ResourceGeneratorUtil;
 import com.google.gwt.resources.ext.SupportsGeneratorResultCaching;
+import com.google.gwt.resources.gss.CreateRuntimeConditionalNodes;
 import com.google.gwt.resources.gss.CssPrinter;
+import com.google.gwt.resources.gss.ExtendedEliminateConditionalNodes;
 import com.google.gwt.resources.gss.ExternalClassesCollector;
 import com.google.gwt.resources.gss.GwtGssFunctionMapProvider;
 import com.google.gwt.resources.gss.ImageSpriteCreator;
 import com.google.gwt.resources.gss.PermutationsCollector;
 import com.google.gwt.resources.gss.RecordingBidiFlipper;
 import com.google.gwt.resources.gss.RenamingSubstitutionMap;
+import com.google.gwt.resources.gss.RuntimeConditionalNodeCollector;
 import com.google.gwt.resources.rg.CssResourceGenerator.JClassOrderComparator;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.gwt.user.rebind.StringSourceWriter;
@@ -528,6 +530,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     new CreateDefinitionNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
     new CreateConstantReferences(cssTree.getMutatingVisitController()).runPass();
     new CreateConditionalNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
+    new CreateRuntimeConditionalNodes(cssTree.getMutatingVisitController()).runPass();
     new CreateComponentNodes(cssTree.getMutatingVisitController(), errorManager).runPass();
 
     new HandleUnknownAtRuleNodes(cssTree.getMutatingVisitController(), errorManager,
@@ -564,8 +567,13 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     new ProcessComponents<Object>(cssTree.getMutatingVisitController(), errorManager).runPass();
 
-    new EliminateConditionalNodes(cssTree.getMutatingVisitController(),
-        getPermutationsConditions(context, extendedCssTree.getPermutationAxes())).runPass();
+    RuntimeConditionalNodeCollector runtimeConditionalNodeCollector = new
+        RuntimeConditionalNodeCollector(cssTree.getVisitController());
+    runtimeConditionalNodeCollector.runPass();
+
+    new ExtendedEliminateConditionalNodes(cssTree.getMutatingVisitController(),
+        getPermutationsConditions(context, extendedCssTree.getPermutationAxes()),
+        runtimeConditionalNodeCollector.getRuntimeConditionalNodes()).runPass();
 
     CollectConstantDefinitions collectConstantDefinitionsPass = new CollectConstantDefinitions(
         cssTree);
