@@ -14,7 +14,6 @@
  * the License.
  */
 
-
 package com.google.gwt.resources.converter;
 
 import static java.lang.String.format;

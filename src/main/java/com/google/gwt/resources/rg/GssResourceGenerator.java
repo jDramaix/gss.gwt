@@ -101,6 +101,7 @@ import com.google.gwt.resources.ext.ResourceGeneratorUtil;
 import com.google.gwt.resources.ext.SupportsGeneratorResultCaching;
 import com.google.gwt.resources.gss.CreateRuntimeConditionalNodes;
 import com.google.gwt.resources.gss.CssPrinter;
+import com.google.gwt.resources.gss.DisallowDefInsideRuntimeConditionalNode;
 import com.google.gwt.resources.gss.ExtendedEliminateConditionalNodes;
 import com.google.gwt.resources.gss.ExternalClassesCollector;
 import com.google.gwt.resources.gss.GwtGssFunctionMapProvider;
@@ -555,7 +556,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   }
 
   private OptimizationInfo optimize(ExtendedCssTree extendedCssTree, ResourceContext context,
-      boolean simplifyCss, boolean eliminateDeadStyles) {
+      boolean simplifyCss, boolean eliminateDeadStyles) throws UnableToCompleteException {
     CssTree cssTree = extendedCssTree.getCssTree();
 
     // Collect mixin definitions and replace mixins
@@ -574,6 +575,12 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     new ExtendedEliminateConditionalNodes(cssTree.getMutatingVisitController(),
         getPermutationsConditions(context, extendedCssTree.getPermutationAxes()),
         runtimeConditionalNodeCollector.getRuntimeConditionalNodes()).runPass();
+
+    new DisallowDefInsideRuntimeConditionalNode(cssTree.getVisitController(),
+        errorManager).runPass();
+
+    // Don't continue if errors exist
+    checkErrors();
 
     CollectConstantDefinitions collectConstantDefinitionsPass = new CollectConstantDefinitions(
         cssTree);
