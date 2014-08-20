@@ -42,8 +42,13 @@ public class Css2GssTest {
   }
 
   @Test
-  public void testCssConditional()  throws IOException {
+  public void testCssConditional() throws IOException {
     assertFileContentEqualsAfterConversion("conditional.css", "conditional.gss");
+  }
+
+  @Test
+  public void testSprite() throws IOException {
+    assertFileContentEqualsAfterConversion("sprite.css", "sprite.gss");
   }
 
   private void assertFileContentEqualsAfterConversion(String inputCssFile, String expectedGssFile)

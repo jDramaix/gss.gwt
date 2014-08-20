@@ -70,7 +70,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private boolean newLine;
   private boolean needsOpenBrace;
   private boolean needsComma;
-  private boolean inSprite;
   private boolean inUrl;
 
   public GssGenerationVisitor(TextOutput out, Map<String, String> defKeyMapping) {
@@ -124,7 +123,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssSprite x, Context ctx) {
-    inSprite = true;
     return false;
   }
 
@@ -141,7 +139,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     accept(x.getProperties());
 
     closeBrace();
-    inSprite = false;
   }
 
   @Override
@@ -463,7 +460,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
         expression = value.getExpression();
       } else if (value.isDotPathValue() != null) {
         DotPathValue dotPathValue = value.isDotPathValue();
-        if (inUrl || inSprite) {
+        if (inUrl) {
           expression = dotPathValue.getPath();
         } else {
           if (Strings.isNullOrEmpty(dotPathValue.getSuffix())) {
