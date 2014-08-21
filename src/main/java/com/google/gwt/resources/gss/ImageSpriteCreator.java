@@ -16,8 +16,11 @@
 
 package com.google.gwt.resources.gss;
 
+import static com.google.common.css.compiler.passes.PassUtil.ALTERNATE;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
+import com.google.common.collect.Lists;
 import com.google.common.css.SourceCodeLocation;
 import com.google.common.css.compiler.ast.CssCommentNode;
 import com.google.common.css.compiler.ast.CssCompilerPass;
@@ -44,8 +47,6 @@ import com.google.gwt.resources.ext.ResourceGeneratorUtil;
 import com.google.gwt.resources.gss.ast.CssDotPathNode;
 
 import java.util.List;
-
-import static com.google.common.css.compiler.passes.PassUtil.ALTERNATE;
 
 public class ImageSpriteCreator extends DefaultTreeVisitor implements CssCompilerPass {
   private static final String SPRITE_PROPERTY_NAME = "gwt-sprite";
@@ -157,7 +158,7 @@ public class ImageSpriteCreator extends DefaultTreeVisitor implements CssCompile
     JMethod imageMethod;
     try {
       imageMethod = ResourceGeneratorUtil.getMethodByPath(context.getClientBundleType(),
-          ImmutableList.of(imageResource), imageResourceType);
+          getPathElement(imageResource), imageResourceType);
     } catch (NotFoundException e) {
       errorManager.report(new GssError("Unable to find ImageResource method "
           + imageResource + " in " + context.getClientBundleType().getQualifiedSourceName() + " : "
@@ -199,6 +200,10 @@ public class ImageSpriteCreator extends DefaultTreeVisitor implements CssCompile
     listBuilder.add(buildBackgroundDeclaration(imageResource, repeatText, sourceCodeLocation));
 
     visitController.replaceCurrentBlockChildWith(listBuilder.build(), false);
+  }
+
+  private List<String> getPathElement(String imageResourcePath) {
+    return Lists.newArrayList(imageResourcePath.split("\\."));
   }
 
   private CssDeclarationNode createDeclarationNode(CssPropertyNode propertyNode,

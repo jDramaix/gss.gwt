@@ -32,17 +32,29 @@ public class Css2GssTest {
 
   @Test
   public void testInlineBlockCssEscaping() throws IOException {
-    URL resource = Css2GssTest.class.getResource("inline-block.css");
-    InputStream stream = Css2GssTest.class.getResourceAsStream("inline-block.gss");
-    String convertedGss = new Css2Gss(resource, new PrintWriter(System.err)).toGss();
-    String gss = IOUtils.toString(stream, "UTF-8");
-    Assert.assertEquals(gss, convertedGss);
+    assertFileContentEqualsAfterConversion("inline-block.css", "inline-block.gss");
   }
 
   @Test
   public void testMultipleDeclarationOfSameProperty() throws IOException {
-    URL resource = Css2GssTest.class.getResource("multiple_declarations.css");
-    InputStream stream = Css2GssTest.class.getResourceAsStream("multiple_declarations.gss");
+    assertFileContentEqualsAfterConversion("multiple_declarations.css",
+        "multiple_declarations.gss");
+  }
+
+  @Test
+  public void testCssConditional() throws IOException {
+    assertFileContentEqualsAfterConversion("conditional.css", "conditional.gss");
+  }
+
+  @Test
+  public void testSprite() throws IOException {
+    assertFileContentEqualsAfterConversion("sprite.css", "sprite.gss");
+  }
+
+  private void assertFileContentEqualsAfterConversion(String inputCssFile, String expectedGssFile)
+      throws IOException {
+    URL resource = Css2GssTest.class.getResource(inputCssFile);
+    InputStream stream = Css2GssTest.class.getResourceAsStream(expectedGssFile);
     String convertedGss = new Css2Gss(resource, new PrintWriter(System.err)).toGss();
     String gss = IOUtils.toString(stream, "UTF-8");
     Assert.assertEquals(gss, convertedGss);

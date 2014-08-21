@@ -16,12 +16,17 @@
 
 package com.google.gwt.resources.gss.ast;
 
+import com.google.common.css.SourceCodeLocation;
 import com.google.common.css.compiler.ast.CssValueNode;
 
 public class CssJavaExpressionNode extends CssValueNode {
 
   public CssJavaExpressionNode(String expression) {
-    super(expression);
+    this(expression, null);
+  }
+
+  public CssJavaExpressionNode(String expression, SourceCodeLocation sourceCodeLocation) {
+    super(expression, sourceCodeLocation);
   }
 
   @Override

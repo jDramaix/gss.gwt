@@ -5,3 +5,7 @@
 .someImageResource {
     width: 15px;
 }
+
+.embeddedSprite {
+  gwt-sprite: 'embeddedImageResources.someResource';
+}

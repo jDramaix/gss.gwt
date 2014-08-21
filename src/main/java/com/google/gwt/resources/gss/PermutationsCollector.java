@@ -35,7 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PermutationsCollector extends DefaultTreeVisitor implements CssCompilerPass {
-  private static final Pattern IS_FUNCTION = Pattern.compile("^is\\(\"([^\"]*)\"(?:,\"([^\"]*)\")?\\)$");
+  private static final Pattern IS_FUNCTION = Pattern.compile("^is\\([\"']([^\"']*)[\"'](?:,[\"']([^\"']*)[\"'])?\\)$");
   private static final String USER_AGENT_PERMUTATION = "user.agent";
 
   private final MutatingVisitController delegate;

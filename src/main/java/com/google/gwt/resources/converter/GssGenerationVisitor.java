@@ -14,7 +14,6 @@
  * the License.
  */
 
-
 package com.google.gwt.resources.converter;
 
 import static java.lang.String.format;
@@ -71,7 +70,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private boolean newLine;
   private boolean needsOpenBrace;
   private boolean needsComma;
-  private boolean inSprite;
   private boolean inUrl;
 
   public GssGenerationVisitor(TextOutput out, Map<String, String> defKeyMapping) {
@@ -125,7 +123,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssSprite x, Context ctx) {
-    inSprite = true;
     return false;
   }
 
@@ -142,7 +139,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     accept(x.getProperties());
 
     closeBrace();
-    inSprite = false;
   }
 
   @Override
@@ -216,9 +212,8 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   @Override
   public boolean visit(CssElIf x, Context ctx) {
     closeBrace();
-    out.print(format(ELSE_IF, printConditionnalExpression(x)));
-    openBrace();
-    newLine = false;
+
+    openConditional(ELSE_IF, x);
 
     return true;
   }
@@ -231,20 +226,42 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssIf x, Context ctx) {
-    if (x.getExpression() != null) {
-      // TODO improve warning message system
-      System.out.println("Conditionnal css based on runtime evaluation is not supported yet. The " +
-          "following expression is skipped: " + x);
-      return false;
-    }
-
     out.newline();
-    out.print(format(IF, printConditionnalExpression(x)));
-    openBrace();
 
-    newLine = false;
+    openConditional(IF, x);
 
     return true;
+  }
+
+  private void openConditional(String template, CssIf ifOrElif) {
+    String condition;
+
+    String runtimeCondition = extractExpression(ifOrElif);
+
+    if (runtimeCondition != null) {
+      condition = format(EVAL, runtimeCondition);
+    } else {
+      condition = printConditionnalExpression(ifOrElif);
+    }
+
+    out.print(format(template, condition));
+
+    openBrace();
+    newLine = false;
+  }
+
+  private String extractExpression(CssIf ifOrElif) {
+    String condition = ifOrElif.getExpression();
+
+    if (condition == null) {
+      return null;
+    }
+
+    if (condition.trim().startsWith("(")) {
+      condition = condition.substring(1, condition.length() - 1);
+    }
+
+    return condition;
   }
 
   @Override
@@ -320,7 +337,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     }
 
     needsComma = true;
-    // TODO add a parameter to decide if we put selectors on the same line
+
     newLine = true;
 
     out.print(unescape(x.getSelector()));
@@ -442,7 +459,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
         expression = value.getExpression();
       } else if (value.isDotPathValue() != null) {
         DotPathValue dotPathValue = value.isDotPathValue();
-        if (inUrl || inSprite) {
+        if (inUrl) {
           expression = dotPathValue.getPath();
         } else {
           if (Strings.isNullOrEmpty(dotPathValue.getSuffix())) {

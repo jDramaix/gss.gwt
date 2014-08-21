@@ -21,12 +21,19 @@ import com.google.gwt.resources.client.CssResource.NotStrict;
 import com.google.gwt.resources.client.ScopeResource.SharedParent;
 
 public interface TestResources extends ClientBundle {
+  public interface ImageResources extends ClientBundle {
+        @Source("someImageResource.png")
+        ImageResource someResource();
+  }
+
   interface SomeGssResource extends GssResource {
     String someClass();
   }
 
   interface SpriteGssResource extends GssResource {
     String someClassWithSprite();
+
+    String embeddedSprite();
 
     // define a style class having the same name than another resource in the ClientBundle
     // test possible conflict
@@ -80,6 +87,10 @@ public interface TestResources extends ClientBundle {
     String conflictConstantClass();
   }
 
+  interface RuntimeConditional extends GssResource {
+    String foo();
+  }
+
   ClassNameAnnotation classNameAnnotation();
 
   SomeGssResource mixin();
@@ -112,4 +123,8 @@ public interface TestResources extends ClientBundle {
 
   @NotStrict
   SomeGssResource notstrict();
+
+  RuntimeConditional runtimeConditional();
+
+  ImageResources embeddedImageResources();
 }
