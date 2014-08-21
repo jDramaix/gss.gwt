@@ -239,7 +239,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     String runtimeCondition = extractExpression(ifOrElif);
 
     if (runtimeCondition != null) {
-      //con
       condition = format(EVAL, runtimeCondition);
     } else {
       condition = printConditionnalExpression(ifOrElif);
@@ -338,7 +337,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     }
 
     needsComma = true;
-    // TODO add a parameter to decide if we put selectors on the same line
+
     newLine = true;
 
     out.print(unescape(x.getSelector()));

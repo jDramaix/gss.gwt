@@ -61,7 +61,6 @@ public class CreateRuntimeConditionalNodes extends DefaultTreeVisitor implements
       CssConditionalBlockNode parent) {
 
     if (node.getType() != Type.ELSE) {
-
       CssBooleanExpressionNode nodeCondition = node.getCondition();
       String condition = extractRuntimeCondition(nodeCondition);
 
@@ -84,7 +83,6 @@ public class CreateRuntimeConditionalNodes extends DefaultTreeVisitor implements
     Matcher m = EVAL_FUNCTION.matcher(node.getValue());
     return m.matches() ? m.group(1) : null;
   }
-
 
   @Override
   public void runPass() {

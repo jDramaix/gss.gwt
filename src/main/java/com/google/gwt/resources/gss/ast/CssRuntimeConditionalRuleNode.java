@@ -36,7 +36,6 @@ public class CssRuntimeConditionalRuleNode extends CssConditionalRuleNode {
     }
   }
 
-
   /**
    * Copy constructor.
    *
@@ -66,10 +65,8 @@ public class CssRuntimeConditionalRuleNode extends CssConditionalRuleNode {
     this.setParameters(ImmutableList.<CssValueNode>of(condition));
   }
 
-
   @Override
   public CssConditionalRuleNode deepCopy() {
     return new CssRuntimeConditionalRuleNode(this);
   }
-
 }

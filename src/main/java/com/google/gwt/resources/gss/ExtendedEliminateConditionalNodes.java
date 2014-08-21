@@ -114,7 +114,6 @@ public class ExtendedEliminateConditionalNodes extends DefaultTreeVisitor implem
       }
     }
 
-
     CssConditionalBlockNode newNode = new CssConditionalBlockNode();
     for (CssConditionalRuleNode child : newChildren) {
       newNode.addChildToBack(child);

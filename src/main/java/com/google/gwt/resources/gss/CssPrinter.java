@@ -124,7 +124,6 @@ public class CssPrinter extends CompactPrinter {
     }
 
     return true;
-
   }
 
   @Override
