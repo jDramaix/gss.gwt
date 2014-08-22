@@ -21,6 +21,8 @@ import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.resources.client.TestResources.ClassNameAnnotation;
 import com.google.gwt.resources.client.TestResources.EmptyClass;
 import com.google.gwt.resources.client.TestResources.ExternalClasses;
+import com.google.gwt.resources.client.TestResources.NonStandardAtRules;
+import com.google.gwt.resources.client.TestResources.NonStandardFunctions;
 import com.google.gwt.resources.client.TestResources.RuntimeConditional;
 import com.google.gwt.resources.client.TestResources.SomeGssResource;
 import com.google.gwt.resources.client.TestResources.TestImportCss;
@@ -208,6 +210,22 @@ public class GssResourceTest extends GWTTestCase {
     assertEquals(runtimeExpectedCss("gray", null, foo), runtimeConditional.getText());
   }
 
+  public void testNonStandardAtRules() {
+    NonStandardAtRules nonStandardAtRules = res().nonStandardAtRules();
+
+    String css = nonStandardAtRules.getText();
+    assertTrue(css.contains("@extenal"));
+    assertTrue(css.contains("@-mozdocument"));
+  }
+
+  public void testNonStandardFunctions() {
+    NonStandardFunctions nonStandardFunctions = res().nonStandardFunctions();
+
+    String css = nonStandardFunctions.getText();
+    assertTrue(css.contains("expression("));
+    assertTrue(css.contains("progid:DXImageTransform.Microsoft.gradient("));
+  }
+
   private String runtimeExpectedCss(String color, String padding, String foo) {
     String s =  "." + foo +  "{width:100%}" + "." + foo +  "{color:" + color + "}";
 
@@ -217,6 +235,7 @@ public class GssResourceTest extends GWTTestCase {
 
     return s;
   }
+
 
   private TestResources res() {
     return GWT.create(TestResources.class);

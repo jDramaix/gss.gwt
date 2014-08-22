@@ -2,4 +2,13 @@
         "http://google-web-toolkit.googlecode.com/svn/releases/2.0/distro-source/core/src/gwt-module.dtd">
 <module>
   <inherits name="com.google.gwt.resources.GssResource" />
+
+  <!-- Define two other non standards at-rules -->
+  <extend-configuration-property name="CssResource.allowedAtRules" value="extenal" />
+  <extend-configuration-property name="CssResource.allowedAtRules" value="-mozdocument" />
+
+  <!-- Define two other non standards functions -->
+  <extend-configuration-property name="CssResource.allowedFunctions" value="expression" />
+  <extend-configuration-property name="CssResource.allowedFunctions"
+                                 value="progid:DXImageTransform.Microsoft.gradient" />
 </module>
