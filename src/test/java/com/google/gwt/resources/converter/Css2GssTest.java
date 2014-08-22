@@ -56,6 +56,11 @@ public class Css2GssTest {
     assertFileContentEqualsAfterConversion("sprite.css", "sprite.gss");
   }
 
+  @Test
+  public void testFontFamily() throws IOException {
+    assertFileContentEqualsAfterConversion("font-bug.css", "font-bug.gss");
+  }
+
   private void assertFileContentEqualsAfterConversion(String inputCssFile, String expectedGssFile)
       throws IOException {
     assertFileContentEqualsAfterConversion(inputCssFile, expectedGssFile, false);
