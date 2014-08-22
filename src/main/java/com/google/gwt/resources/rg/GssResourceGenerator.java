@@ -118,6 +118,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -212,8 +213,9 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   // as short as possible. For instance if we have two GssResources to compile, the  prefix
   // for the first resource will be 'a' and the prefix for the second resource will be 'b' and so on
   private static final SubstitutionMap resourcePrefixBuilder = new MinimalSubstitutionMap();
-  // TODO maybe define our own property ?
   private static final String KEY_STYLE = "CssResource.style";
+  private static final String ALLOWED_AT_RULE = "CssResource.allowedAtRules";
+  private static final String ALLOWED_FUNCTIONS = "CssResource.allowedFunctions";
   private static final String KEY_OBFUSCATION_PREFIX = "CssResource.obfuscationPrefix";
   private static final String KEY_CLASS_PREFIX = "cssResourcePrefix";
   private static final String KEY_BY_CLASS_AND_METHOD = "cssResourceClassAndMethod";
@@ -241,6 +243,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     return b.toString();
   }
 
+
   private Map<JMethod, ExtendedCssTree> cssTreeMap;
   private Set<String> allowedNonStandardFunctions;
   private LoggerErrorManager errorManager;
@@ -250,7 +253,6 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   private String obfuscationPrefix;
   // TODO for the time being we just support one mode of class name obfuscation. boolean is enough
   private boolean obfuscateClassName;
-  // TODO add the possiblity to the developper to define his own at-rule ?
   private Set<String> allowedAtRules;
   private Map<JClassType, Map<String, String>> replacementsByClassAndMethod;
   private Map<JMethod, String> replacementsForSharedMethods;
@@ -285,17 +287,25 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   public void init(TreeLogger logger, ResourceContext context) throws UnableToCompleteException {
     cssTreeMap = new IdentityHashMap<JMethod, ExtendedCssTree>();
     errorManager = new LoggerErrorManager(logger);
-    // TODO : add ability to developpers to add non standard functions
-    // (like "progid:DXImageTransform.Microsoft.gradient") via configuration property
-    allowedNonStandardFunctions = Sets.newHashSet();
+
+    allowedNonStandardFunctions = new HashSet<String>();
     allowedAtRules = Sets.newHashSet(ExternalClassesCollector.EXTERNAL_AT_RULE);
 
     try {
       PropertyOracle propertyOracle = context.getGeneratorContext().getPropertyOracle();
+
       ConfigurationProperty styleProp = propertyOracle.getConfigurationProperty(KEY_STYLE);
       obfuscateClassName = CssObfuscationStyle.getObfuscationStyle(styleProp.getValues().get(0))
           == CssObfuscationStyle.OBFUSCATED;
       obfuscationPrefix = getObfuscationPrefix(propertyOracle, context);
+
+      ConfigurationProperty allowedAtRuleProperty = propertyOracle
+          .getConfigurationProperty(ALLOWED_AT_RULE);
+      allowedAtRules.addAll(allowedAtRuleProperty.getValues());
+
+      ConfigurationProperty allowedFunctionsProperty = propertyOracle
+          .getConfigurationProperty(ALLOWED_FUNCTIONS);
+      allowedNonStandardFunctions.addAll(allowedFunctionsProperty.getValues());
 
       ClientBundleRequirements requirements = context.getRequirements();
       requirements.addConfigurationProperty(KEY_STYLE);

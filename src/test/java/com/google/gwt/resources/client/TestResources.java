@@ -91,6 +91,14 @@ public interface TestResources extends ClientBundle {
     String foo();
   }
 
+  interface NonStandardAtRules extends GssResource {
+    String foo();
+  }
+
+  interface NonStandardFunctions extends GssResource {
+    String foo();
+  }
+
   ClassNameAnnotation classNameAnnotation();
 
   SomeGssResource mixin();
@@ -127,4 +135,8 @@ public interface TestResources extends ClientBundle {
   RuntimeConditional runtimeConditional();
 
   ImageResources embeddedImageResources();
+
+  NonStandardAtRules nonStandardAtRules();
+
+  NonStandardFunctions nonStandardFunctions();
 }

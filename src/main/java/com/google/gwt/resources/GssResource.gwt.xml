@@ -1,3 +1,15 @@
 <module>
   <inherits name="com.google.gwt.resources.Resources" />
+
+  <!-- TODO move that in com.google.gwt.resources.Resources.gwt.xml -->
+
+  <!-- A multi-valued configuration property that defines the list of allowed non standard -->
+  <!-- at-rules in the css files -->
+  <define-configuration-property name="CssResource.allowedAtRules" is-multi-valued="true" />
+  <extend-configuration-property name="CssResource.allowedAtRules" value="" />
+
+  <!-- A multi-valued configuration property that defines the list of allowed non standard -->
+  <!-- functions in the css files -->
+  <define-configuration-property name="CssResource.allowedFunctions" is-multi-valued="true" />
+  <extend-configuration-property name="CssResource.allowedFunctions" value="" />
 </module>

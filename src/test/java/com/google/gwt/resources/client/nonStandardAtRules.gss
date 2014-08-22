@@ -1,0 +1,5 @@
+@extenal;
+@-mozdocument;
+.foo {
+    color:black;
+}
