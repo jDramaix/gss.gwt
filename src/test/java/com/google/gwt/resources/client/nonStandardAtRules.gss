@@ -1,5 +1,10 @@
 @extenal;
 @-mozdocument;
+
+@supports ( display: flex ) {
+    body{ display: flex; }
+}
+
 .foo {
     color:black;
 }

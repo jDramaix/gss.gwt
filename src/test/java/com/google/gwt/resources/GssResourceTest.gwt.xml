@@ -5,7 +5,6 @@
 
   <!-- Define two other non standards at-rules -->
   <extend-configuration-property name="CssResource.allowedAtRules" value="extenal" />
-  <extend-configuration-property name="CssResource.allowedAtRules" value="-mozdocument" />
 
   <!-- Define two other non standards functions -->
   <extend-configuration-property name="CssResource.allowedFunctions" value="expression" />

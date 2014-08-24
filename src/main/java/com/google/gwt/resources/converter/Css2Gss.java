@@ -26,19 +26,25 @@ import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+/**
+ * Converter from Css to Gss
+ */
 public class Css2Gss {
 
   private final URL cssFile;
   private final PrintWriter printWriter;
+  private final boolean lenient;
 
   public Css2Gss(String filePath) throws MalformedURLException {
     cssFile = new File(filePath).toURI().toURL();
     printWriter = new PrintWriter(System.err);
+    lenient = false;
   }
 
-  public Css2Gss(URL fileUrl, PrintWriter outputPrintWiter) {
+  public Css2Gss(URL fileUrl, PrintWriter outputPrintWiter, boolean lenient) {
     cssFile = fileUrl;
     printWriter = outputPrintWiter;
+    this.lenient = lenient;
   }
 
   public String toGss() {
@@ -52,7 +58,7 @@ public class Css2Gss {
       new AlternateAnnotationCreatorVisitor().accept(sheet);
 
       GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(new DefaultTextOutput
-          (false), defCollectorVisitor.getDefMapping());
+          (false), defCollectorVisitor.getDefMapping(), lenient);
       gssGenerationVisitor.accept(sheet);
 
       return gssGenerationVisitor.getContent();

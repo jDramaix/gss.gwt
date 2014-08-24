@@ -47,15 +47,25 @@ public class Css2GssTest {
   }
 
   @Test
+  public void testLenientFlag() throws IOException {
+    assertFileContentEqualsAfterConversion("badRule.css", "badRule.gss", true);
+  }
+
+  @Test
   public void testSprite() throws IOException {
     assertFileContentEqualsAfterConversion("sprite.css", "sprite.gss");
   }
 
   private void assertFileContentEqualsAfterConversion(String inputCssFile, String expectedGssFile)
       throws IOException {
+    assertFileContentEqualsAfterConversion(inputCssFile, expectedGssFile, false);
+  }
+
+  private void assertFileContentEqualsAfterConversion(String inputCssFile,
+      String expectedGssFile, boolean lenient) throws IOException {
     URL resource = Css2GssTest.class.getResource(inputCssFile);
     InputStream stream = Css2GssTest.class.getResourceAsStream(expectedGssFile);
-    String convertedGss = new Css2Gss(resource, new PrintWriter(System.err)).toGss();
+    String convertedGss = new Css2Gss(resource, new PrintWriter(System.err), lenient).toGss();
     String gss = IOUtils.toString(stream, "UTF-8");
     Assert.assertEquals(gss, convertedGss);
   }

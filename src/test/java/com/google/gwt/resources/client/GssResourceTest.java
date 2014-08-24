@@ -216,6 +216,7 @@ public class GssResourceTest extends GWTTestCase {
     String css = nonStandardAtRules.getText();
     assertTrue(css.contains("@extenal"));
     assertTrue(css.contains("@-mozdocument"));
+    assertTrue(css.contains("@supports"));
   }
 
   public void testNonStandardFunctions() {
