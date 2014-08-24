@@ -19,6 +19,9 @@ package com.google.gwt.resources.converter;
 import static java.lang.String.format;
 
 import com.google.common.base.Strings;
+import com.google.common.css.SourceCode;
+import com.google.common.css.compiler.ast.GssParser;
+import com.google.common.css.compiler.ast.GssParserException;
 import com.google.gwt.dev.util.TextOutput;
 import com.google.gwt.resources.css.ast.Context;
 import com.google.gwt.resources.css.ast.CssCompilerException;
@@ -66,15 +69,18 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private final Map<String, String> defKeyMapping;
 
   private final TextOutput out;
+  private final boolean lenient;
+
   private boolean noFlip;
   private boolean newLine;
   private boolean needsOpenBrace;
   private boolean needsComma;
   private boolean inUrl;
 
-  public GssGenerationVisitor(TextOutput out, Map<String, String> defKeyMapping) {
+  public GssGenerationVisitor(TextOutput out, Map<String, String> defKeyMapping, boolean lenient) {
     this.defKeyMapping = defKeyMapping;
     this.out = out;
+    this.lenient = lenient;
     newLine = true;
   }
 
@@ -179,19 +185,37 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   public boolean visit(CssProperty x, Context ctx) {
     maybePrintOpenBrace();
 
+    StringBuilder propertyBuilder = new StringBuilder();
+
     if (noFlip) {
-      out.print(NO_FLIP);
-      out.print(' ');
+      propertyBuilder.append(NO_FLIP);
+      propertyBuilder.append(' ');
     }
 
-    out.print(x.getName());
-    colon();
+    propertyBuilder.append(x.getName());
+    propertyBuilder.append(": ");
 
-    out.print(printValuesList(x.getValues().getValues()));
+    propertyBuilder.append(printValuesList(x.getValues().getValues()));
 
     if (x.isImportant()) {
-      out.print(IMPORTANT);
+      propertyBuilder.append(IMPORTANT);
     }
+
+    String cssProperty = propertyBuilder.toString();
+
+    if (lenient) {
+      // lenient mode: Try to parse the css rule and if an error occurs,
+      // print a warning message and don't print the rule.
+      try {
+        new GssParser(new SourceCode(null, "body{" + cssProperty +"}")).parse();
+      } catch (GssParserException e) {
+        System.err.println("The following property is not valid and will be skipped: " +
+            cssProperty);
+        return false;
+      }
+    }
+
+    out.print(cssProperty);
 
     semiColon();
 
@@ -384,11 +408,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     out.indentOut();
     out.print('}');
     out.newlineOpt();
-  }
-
-  private void colon() {
-    out.print(':');
-    spaceOpt();
   }
 
   private void comma() {
