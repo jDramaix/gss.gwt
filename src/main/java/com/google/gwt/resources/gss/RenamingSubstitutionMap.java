@@ -27,6 +27,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+/**
+ * This SubstitutionMap is used for renaming each style classes of the ast by its corresponding
+ * obfuscated name.
+ * <p/>
+ * It takes care of eventual prefix and not renaming external style classes. It also raise an
+ * error if a style class doesn't have a replacement name and strict mode is enabled.
+ * <p/>
+ * This class doesn't compute the replacement name of the class.
+ *
+ */
 public class RenamingSubstitutionMap implements SubstitutionMap {
   private final Map<String, String> replacementMap;
   private final boolean isStrict;
@@ -76,7 +86,7 @@ public class RenamingSubstitutionMap implements SubstitutionMap {
 
     if (replacement == null) {
       if (isStrict) {
-        logger.log(Type.ERROR, "The following unobfuscated classes were present in a strict " +
+        logger.log(Type.ERROR, "The following non-obfuscated class is present in a strict " +
             "CssResource: " + key);
         hasError = true;
       }

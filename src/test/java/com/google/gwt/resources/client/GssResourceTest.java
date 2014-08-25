@@ -16,22 +16,29 @@
 
 package com.google.gwt.resources.client;
 
-import com.google.gwt.core.shared.GWT;
-import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.resources.client.TestResources.ClassNameAnnotation;
 import com.google.gwt.resources.client.TestResources.EmptyClass;
-import com.google.gwt.resources.client.TestResources.ExternalClasses;
 import com.google.gwt.resources.client.TestResources.NonStandardAtRules;
 import com.google.gwt.resources.client.TestResources.NonStandardFunctions;
 import com.google.gwt.resources.client.TestResources.RuntimeConditional;
 import com.google.gwt.resources.client.TestResources.SomeGssResource;
-import com.google.gwt.resources.client.TestResources.TestImportCss;
 import com.google.gwt.resources.client.TestResources.WithConstant;
 
-public class GssResourceTest extends GWTTestCase {
+public class GssResourceTest extends RenamingClassNameTest {
   @Override
   public String getModuleName() {
     return "com.google.gwt.resources.GssResourceTest";
+  }
+
+  @Override
+  public void testClassesRenaming() {
+    ClassNameAnnotation classNameAnnotation = res().classNameAnnotation();
+    String renamedClass = classNameAnnotation.renamedClass();
+    String nonRenamedClass = classNameAnnotation.nonRenamedClass();
+
+    assertTrue(renamedClass.matches(OBFUSCATION_PATTERN));
+    assertTrue(nonRenamedClass.matches(OBFUSCATION_PATTERN));
+
   }
 
   public void testMixin() {
@@ -72,20 +79,6 @@ public class GssResourceTest extends GWTTestCase {
   }
 
   /**
-   * Test that style classes mentioned as external are not obfuscated.
-   */
-  public void testExternalClasses() {
-    ExternalClasses externalClasses = res().externalClasses();
-
-    assertNotSame("obfuscatedClass", externalClasses.obfuscatedClass());
-
-    assertEquals("externalClass", externalClasses.externalClass());
-    assertEquals("externalClass2", externalClasses.externalClass2());
-    assertEquals("unobfuscated", externalClasses.unobfuscated());
-    assertEquals("unobfuscated2", externalClasses.unobfuscated2());
-  }
-
-  /**
    * Test that empty class definitions doesn't throw an exception (issue #25) and that they are
    * removed from the resulting css.
    */
@@ -93,15 +86,6 @@ public class GssResourceTest extends GWTTestCase {
     EmptyClass emptyClass = res().emptyClass();
 
     assertEquals("", emptyClass.getText());
-  }
-
-  public void testObfuscationScope() {
-    ScopeResource res = GWT.create(ScopeResource.class);
-
-    assertEquals(res.scopeA().foo(), res.scopeA2().foo());
-    assertNotSame(res.scopeA().foo(), res.scopeB().foo());
-    assertNotSame(res.scopeB().foo(), res.scopeC().foo());
-    assertNotSame(res.scopeA().foo(), res.scopeC().foo());
   }
 
   public void testConstant() {
@@ -120,49 +104,6 @@ public class GssResourceTest extends GWTTestCase {
     String expectedCss = "." + css.renamedClass() + "{color:black}." + css.nonRenamedClass()
         + "{color:white}";
     assertEquals(expectedCss, css.getText());
-  }
-
-  public void testImportAndImportWithPrefix() {
-    TestImportCss css = res().testImportCss();
-    ImportResource importResource = GWT.create(ImportResource.class);
-    ImportResource.ImportCss importCss = importResource.importCss();
-    ImportResource.ImportWithPrefixCss importWithPrefixCss = importResource.importWithPrefixCss();
-
-    String expectedCss = "." + css.other() + "{color:black}." + importCss.className() +
-        " ." + css.other() + "{color:white}." + importWithPrefixCss.className() + " ." +
-        css.other() + "{color:gray}";
-    assertEquals(expectedCss, css.getText());
-  }
-
-  public void testSharedScope() {
-    ScopeResource res = GWT.create(ScopeResource.class);
-    TestResources res2 = res();
-
-    // shareClassName1 is shared
-    assertEquals(res.sharedParent().sharedClassName1(), res.sharedChild1().sharedClassName1());
-    assertEquals(res.sharedParent().sharedClassName1(), res.sharedChild2().sharedClassName1());
-    assertEquals(res.sharedParent().sharedClassName1(), res.sharedGreatChild().sharedClassName1());
-    assertEquals(res.sharedParent().sharedClassName1(), res2.sharedChild3().sharedClassName1());
-
-    // shareClassName2 is shared
-    assertEquals(res.sharedParent().sharedClassName2(), res.sharedChild1().sharedClassName2());
-    assertEquals(res.sharedParent().sharedClassName2(), res.sharedChild2().sharedClassName2());
-    assertEquals(res.sharedParent().sharedClassName2(), res.sharedGreatChild().sharedClassName2());
-    assertEquals(res.sharedParent().sharedClassName2(), res2.sharedChild3().sharedClassName2());
-
-    // nonSharedClassName isn't shared
-    assertNotSame(res.sharedChild1().nonSharedClassName(),
-        res.sharedChild2().nonSharedClassName());
-    assertNotSame(res.sharedChild1().nonSharedClassName(),
-        res.sharedGreatChild().nonSharedClassName());
-    assertNotSame(res.sharedChild1().nonSharedClassName(),
-        res2.sharedChild3().nonSharedClassName());
-    assertNotSame(res.sharedChild2().nonSharedClassName(),
-        res.sharedGreatChild().nonSharedClassName());
-    assertNotSame(res.sharedChild2().nonSharedClassName(),
-        res2.sharedChild3().nonSharedClassName());
-    assertNotSame(res2.sharedChild3().nonSharedClassName(),
-        res.sharedGreatChild().nonSharedClassName());
   }
 
   public void testConstants() {
@@ -228,17 +169,12 @@ public class GssResourceTest extends GWTTestCase {
   }
 
   private String runtimeExpectedCss(String color, String padding, String foo) {
-    String s =  "." + foo +  "{width:100%}" + "." + foo +  "{color:" + color + "}";
+    String s = "." + foo + "{width:100%}" + "." + foo + "{color:" + color + "}";
 
     if (padding != null) {
-      s += "." + foo + "{padding:"+ padding + "}";
+      s += "." + foo + "{padding:" + padding + "}";
     }
 
     return s;
-  }
-
-
-  private TestResources res() {
-    return GWT.create(TestResources.class);
   }
 }

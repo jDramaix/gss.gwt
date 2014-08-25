@@ -27,6 +27,11 @@ public class AllGwtTests extends GWTTestSuite {
   public static Test suite() {
     GWTTestSuite suite = new GWTTestSuite();
     suite.addTestSuite(GssResourceTest.class);
+    suite.addTestSuite(DebugObfuscationStyleTest.class);
+    suite.addTestSuite(PrettyObfuscationStyleTest.class);
+    suite.addTestSuite(StableShortTypeObfuscationStyleTest.class);
+    suite.addTestSuite(StableNoTypeObfuscationStyleTest.class);
+    suite.addTestSuite(StableObfuscationStyleTest.class);
     return suite;
   }
 }
