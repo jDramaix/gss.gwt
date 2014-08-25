@@ -6,7 +6,7 @@
   <!-- A multi-valued configuration property that defines the list of allowed non standard -->
   <!-- at-rules in the css files -->
   <define-configuration-property name="CssResource.allowedAtRules" is-multi-valued="true" />
-  <extend-configuration-property name="CssResource.allowedAtRules" value="-mozdocument" />
+  <extend-configuration-property name="CssResource.allowedAtRules" value="-moz-document" />
   <extend-configuration-property name="CssResource.allowedAtRules" value="supports" />
 
   <!-- A multi-valued configuration property that defines the list of allowed non standard -->
