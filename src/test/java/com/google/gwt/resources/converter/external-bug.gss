@@ -1,0 +1,40 @@
+@external appFooter-appPanel appFooter-linksPanelWithApps bar baz foo panel;
+@media (max-width:767px) {
+
+  .appFooter-appPanel {
+    text-align: center;
+  }
+
+  .appFooter-linksPanelWithApps div {
+    text-align: center !important;
+  }
+
+  .bankAccountCard {
+    margin-left: 5%;
+    margin-right: 5%;
+    max-width: 800px;
+    width: 90%;
+  }
+
+  .footer {
+    position: relative;
+  }
+
+  .panel {
+    padding-bottom: 0;
+  }
+}
+
+@if (is("user.agent", "safari")) {
+  .foo {
+  }
+
+  @if (is("locale", "en")) {
+    .bar {
+    }
+  }
+  @else  {
+    .baz {
+    }
+  }
+}

@@ -52,6 +52,11 @@ public class Css2GssTest {
   }
 
   @Test
+  public void testExternalMissingComma() throws IOException {
+    assertFileContentEqualsAfterConversion("external-bug.css", "external-bug.gss");
+  }
+
+  @Test
   public void testSprite() throws IOException {
     assertFileContentEqualsAfterConversion("sprite.css", "sprite.gss");
   }
@@ -59,6 +64,11 @@ public class Css2GssTest {
   @Test
   public void testFontFamily() throws IOException {
     assertFileContentEqualsAfterConversion("font-bug.css", "font-bug.gss");
+  }
+
+  @Test
+  public void testExternalBug() throws IOException {
+    assertFileContentEqualsAfterConversion("external-bug.css", "external-bug.gss");
   }
 
   private void assertFileContentEqualsAfterConversion(String inputCssFile, String expectedGssFile)
