@@ -1,5 +1,5 @@
 @extenal;
-@-mozdocument;
+@-moz-document;
 
 @supports ( display: flex ) {
     body{ display: flex; }
