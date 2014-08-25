@@ -1,0 +1,18 @@
+@def MY_CONSTANT 15px;
+@def MY_EVAL eval('com.foo.bar.foo()');
+@def MY_URL resourceUrl("imageName");
+@def MY_CONSTANT2 15px;
+@def MY_EVAL2 eval('com.foo.bar.foo()');
+@def MY_URL2 resourceUrl("imageName");
+@def MY_CONSTANT3 15px;
+@def MY_EVAL3 eval('com.foo.bar.foo()');
+@def MY_URL3 resourceUrl("imageName");
+@def MY_CONSTANT4 15px;
+@def MY_EVAL4 eval('com.foo.bar.foo()');
+@def MY_URL4 resourceUrl("imageName");
+
+
+@if (eval('com.google.gwt.i18n.client.LocaleInfo.getCurrentLocale().isRTL()')) {
+}
+@else  {
+}

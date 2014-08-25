@@ -89,6 +89,12 @@ public class Css2GssTest {
         "nestedElseIf.css", "nestedElseIf.gss");
   }
 
+  @Test
+  public void testConstants() throws IOException {
+    assertFileContentEqualsAfterConversion(
+        "constants.css", "constants.gss");
+  }
+
   private void assertFileContentEqualsAfterConversion(String inputCssFile, String expectedGssFile)
       throws IOException {
     assertFileContentEqualsAfterConversion(inputCssFile, expectedGssFile, false);

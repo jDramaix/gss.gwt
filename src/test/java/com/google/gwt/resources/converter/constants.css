@@ -1,0 +1,17 @@
+@def myConstant 15px;
+@eval myEval com.foo.bar.foo();
+@url myUrl imageName;
+
+@if (com.google.gwt.i18n.client.LocaleInfo.getCurrentLocale().isRTL()) {
+  @def myConstant2 15px;
+  @eval myEval2 com.foo.bar.foo();
+  @url myUrl2 imageName;
+} @else {
+  @def myConstant3 15px;
+  @eval myEval3 com.foo.bar.foo();
+  @url myUrl3 imageName;
+}
+
+@def myConstant4 15px;
+@eval myEval4 com.foo.bar.foo();
+@url myUrl4 imageName;
