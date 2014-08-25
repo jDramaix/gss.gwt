@@ -24,22 +24,20 @@ import com.google.common.css.compiler.ast.GssParser;
 import com.google.common.css.compiler.ast.GssParserException;
 import com.google.gwt.dev.util.TextOutput;
 import com.google.gwt.resources.css.ast.Context;
-import com.google.gwt.resources.css.ast.CssCompilerException;
 import com.google.gwt.resources.css.ast.CssDef;
 import com.google.gwt.resources.css.ast.CssEval;
-import com.google.gwt.resources.css.ast.CssExternalSelectors;
 import com.google.gwt.resources.css.ast.CssFontFace;
 import com.google.gwt.resources.css.ast.CssIf;
 import com.google.gwt.resources.css.ast.CssMediaRule;
 import com.google.gwt.resources.css.ast.CssNoFlip;
 import com.google.gwt.resources.css.ast.CssPageRule;
 import com.google.gwt.resources.css.ast.CssProperty;
-import com.google.gwt.resources.css.ast.CssStylesheet;
 import com.google.gwt.resources.css.ast.CssProperty.DotPathValue;
 import com.google.gwt.resources.css.ast.CssProperty.Value;
 import com.google.gwt.resources.css.ast.CssRule;
 import com.google.gwt.resources.css.ast.CssSelector;
 import com.google.gwt.resources.css.ast.CssSprite;
+import com.google.gwt.resources.css.ast.CssStylesheet;
 import com.google.gwt.resources.css.ast.CssUnknownAtRule;
 import com.google.gwt.resources.css.ast.CssUrl;
 
@@ -240,7 +238,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
       try {
         new GssParser(new SourceCode(null, "body{" + cssProperty +"}")).parse();
       } catch (GssParserException e) {
-        System.err.println("The following property is not valid and will be skipped: " +
+        System.err.println("[WARN] The following property is not valid and will be skipped: " +
             cssProperty);
         return false;
       }
@@ -396,7 +394,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     String name = defKeyMapping.get(def.getKey());
 
     if (name == null) {
-      throw new CssCompilerException("unknown @" + atRule + " rule [" + def.getKey() + "]");
+      throw new Css2GssConversionException("unknown @" + atRule + " rule [" + def.getKey() + "]");
     }
 
     out.print(name);
