@@ -10,4 +10,6 @@
   <extend-configuration-property name="CssResource.allowedFunctions" value="expression" />
   <extend-configuration-property name="CssResource.allowedFunctions"
                                  value="progid:DXImageTransform.Microsoft.gradient" />
+
+  <set-configuration-property name="CssResource.obfuscationPrefix" value="" />
 </module>
