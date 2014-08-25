@@ -27,7 +27,6 @@ import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.css.IdentitySubstitutionMap;
 import com.google.common.css.MinimalSubstitutionMap;
 import com.google.common.css.PrefixingSubstitutionMap;
 import com.google.common.css.SourceCode;
@@ -251,8 +250,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   private JMethod ensuredInjectedMethod;
   private JMethod getNameMethod;
   private String obfuscationPrefix;
-  // TODO for the time being we just support one mode of class name obfuscation. boolean is enough
-  private boolean obfuscateClassName;
+  private CssObfuscationStyle obfuscationStyle;
   private Set<String> allowedAtRules;
   private Map<JClassType, Map<String, String>> replacementsByClassAndMethod;
   private Map<JMethod, String> replacementsForSharedMethods;
@@ -295,8 +293,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       PropertyOracle propertyOracle = context.getGeneratorContext().getPropertyOracle();
 
       ConfigurationProperty styleProp = propertyOracle.getConfigurationProperty(KEY_STYLE);
-      obfuscateClassName = CssObfuscationStyle.getObfuscationStyle(styleProp.getValues().get(0))
-          == CssObfuscationStyle.OBFUSCATED;
+      obfuscationStyle = CssObfuscationStyle.getObfuscationStyle(styleProp.getValues().get(0));
       obfuscationPrefix = getObfuscationPrefix(propertyOracle, context);
 
       ConfigurationProperty allowedAtRuleProperty = propertyOracle
@@ -913,21 +910,12 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       replacements = new HashMap<String, String>();
       replacementsByClassAndMethod.put(cssResource, replacements);
 
-      // for the time being, either we don 't rename the classes either we obfuscate them
-      // we can (and should) implement our own SubstitutionMap to handle another obfuscation scheme
-      SubstitutionMap substitutionMap;
-      if (obfuscateClassName) {
-        // it renames CSS classes to the shortest string possible. No conflict possible
-        substitutionMap = new MinimalSubstitutionMap();
-      } else {
-        // map the class name to itself (no renaming)
-        substitutionMap = new IdentitySubstitutionMap();
-      }
-
       String resourcePrefix = resourcePrefixBuilder.get(cssResource.getQualifiedSourceName());
-      // This substitution map will prefix each renamed class with the resource prefix
-      SubstitutionMap prefixingSubstitutionMap = new PrefixingSubstitutionMap(substitutionMap,
-          obfuscationPrefix + resourcePrefix + "-");
+
+      // This substitution map will prefix each renamed class with the resource prefix and use a
+      // MinimalSubstitutionMap for computing the obfuscated name.
+      SubstitutionMap prefixingSubstitutionMap = new PrefixingSubstitutionMap(
+          new MinimalSubstitutionMap(), obfuscationPrefix + resourcePrefix + "-");
 
       for (JMethod method : cssResource.getOverridableMethods()) {
         if (method == getNameMethod || method == getTextMethod || method == ensuredInjectedMethod) {
@@ -940,8 +928,11 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
           replacements.put(styleClass, replacementsForSharedMethods.get(method));
         } else {
           String obfuscatedClassName = prefixingSubstitutionMap.get(styleClass);
-          replacements.put(styleClass, obfuscatedClassName);
-          maybeHandleSharedMethod(method, obfuscatedClassName);
+          String replacement = obfuscationStyle.getPrettyName(styleClass, cssResource,
+              obfuscatedClassName);
+
+          replacements.put(styleClass, replacement);
+          maybeHandleSharedMethod(method, replacement);
         }
       }
     }
