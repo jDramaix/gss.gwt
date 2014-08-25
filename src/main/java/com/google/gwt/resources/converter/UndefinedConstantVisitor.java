@@ -59,12 +59,14 @@ public class UndefinedConstantVisitor extends CssVisitor {
       while (matcher.find()) {
         String upperCaseString = matcher.group();
         if (!gssContantNames.contains(upperCaseString)) {
-          System.err.println("[WARN] '" + cssProperty.getName() + "' from rule '"
-              + x.getSelectors().toString() + "' since it uses an undefined constant: "
+          System.err.println("[WARN] Property '" + cssProperty.getName() + "' from rule '"
+              + x.getSelectors().toString() + "' uses an undefined constant: "
               + upperCaseString);
           if (lenient) {
             System.err.println(
-                "[WARN] turning to lower case. This is probably not what you wanted here in the first place!");
+                "[WARN] turning '" + upperCaseString +
+                    "' to lower case. This is probably not what you wanted here in the " +
+                    "first place!");
             cssPropertyString =
                 cssPropertyString.replace(upperCaseString, upperCaseString.toLowerCase());
             needsUpdate = true;
@@ -78,7 +80,6 @@ public class UndefinedConstantVisitor extends CssVisitor {
       }
 
       if (needsUpdate) {
-        needsUpdate = false;
         cssProperty.setValue(new SimpleValue(cssPropertyString));
       }
     }

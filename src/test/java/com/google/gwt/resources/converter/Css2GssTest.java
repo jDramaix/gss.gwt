@@ -83,6 +83,12 @@ public class Css2GssTest {
         "external-escaping.css", "external-escaping.gss");
   }
 
+  @Test
+  public void testNestedConditional() throws IOException {
+    assertFileContentEqualsAfterConversion(
+        "nestedElseIf.css", "nestedElseIf.gss");
+  }
+
   private void assertFileContentEqualsAfterConversion(String inputCssFile, String expectedGssFile)
       throws IOException {
     assertFileContentEqualsAfterConversion(inputCssFile, expectedGssFile, false);
