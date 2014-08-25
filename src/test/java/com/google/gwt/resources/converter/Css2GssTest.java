@@ -78,6 +78,12 @@ public class Css2GssTest {
   }
 
   @Test
+  public void testRemoveExternalEscaping() throws IOException {
+    assertFileContentEqualsAfterConversion(
+        "external-escaping.css", "external-escaping.gss");
+  }
+
+  @Test
   public void testNestedConditional() throws IOException {
     assertFileContentEqualsAfterConversion(
         "nestedElseIf.css", "nestedElseIf.gss");
