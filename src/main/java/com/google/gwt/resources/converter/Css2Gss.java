@@ -63,6 +63,7 @@ public class Css2Gss {
       externalClassesCollector.accept(sheet);
       SortedSet<String> classes = externalClassesCollector.getClasses();
       removeWrongEntries(classes);
+      removeWrongEscaping(classes);
 
       new UndefinedConstantVisitor(gssVarariableNames, lenient).accept(sheet);
       new ElseNodeCreator().accept(sheet);
@@ -78,6 +79,20 @@ public class Css2Gss {
       printWriter.flush();
       throw new RuntimeException(e);
     }
+  }
+
+  private void removeWrongEscaping(SortedSet<String> classes) {
+    Set<String> toRemove = new HashSet<String>();
+    Set<String> toAdd = new HashSet<String>();
+
+    for (String clazzName : classes) {
+      if (clazzName.contains("\\-")) {
+        toRemove.add(clazzName);
+        toAdd.add(clazzName.replace("\\-", "-"));
+      }
+    }
+    classes.removeAll(toRemove);
+    classes.addAll(toAdd);
   }
 
   private void removeWrongEntries(SortedSet<String> classes) {

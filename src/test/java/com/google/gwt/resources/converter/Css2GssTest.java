@@ -77,6 +77,12 @@ public class Css2GssTest {
         "undefined-constants.css", "undefined-constants.gss", true);
   }
 
+  @Test
+  public void testRemoveExternalEscaping() throws IOException {
+    assertFileContentEqualsAfterConversion(
+        "external-escaping.css", "external-escaping.gss");
+  }
+
   private void assertFileContentEqualsAfterConversion(String inputCssFile, String expectedGssFile)
       throws IOException {
     assertFileContentEqualsAfterConversion(inputCssFile, expectedGssFile, false);
