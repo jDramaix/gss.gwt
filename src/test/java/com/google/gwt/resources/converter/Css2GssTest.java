@@ -71,6 +71,12 @@ public class Css2GssTest {
     assertFileContentEqualsAfterConversion("external-bug.css", "external-bug.gss");
   }
 
+  @Test
+  public void testUndefinedConstant() throws IOException {
+    assertFileContentEqualsAfterConversion(
+        "undefined-constants.css", "undefined-constants.gss", true);
+  }
+
   private void assertFileContentEqualsAfterConversion(String inputCssFile, String expectedGssFile)
       throws IOException {
     assertFileContentEqualsAfterConversion(inputCssFile, expectedGssFile, false);
