@@ -66,12 +66,19 @@ public class Css2Gss {
       removeWrongEscaping(classes);
 
       new UndefinedConstantVisitor(gssVarariableNames, lenient).accept(sheet);
+
       new ElseNodeCreator().accept(sheet);
+
       new AlternateAnnotationCreatorVisitor().accept(sheet);
+
       new FontFamilyVisitor().accept(sheet);
 
-      GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(new DefaultTextOutput
-          (false), defCollectorVisitor.getDefMapping(), classes, lenient);
+      ConstantsCollector constantsCollector = new ConstantsCollector();
+      constantsCollector.accept(sheet);
+
+      GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(
+          new DefaultTextOutput(false), defCollectorVisitor.getDefMapping(), classes,
+          constantsCollector.getConstantNodes(), lenient);
       gssGenerationVisitor.accept(sheet);
 
       return gssGenerationVisitor.getContent();

@@ -69,6 +69,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private final Map<String, String> defKeyMapping;
 
   private final TextOutput out;
+  private final List<CssDef> constantNodes;
   private final boolean lenient;
 
   private boolean noFlip;
@@ -79,9 +80,10 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private SortedSet<String> externalClassDefs;
 
   public GssGenerationVisitor(TextOutput out, Map<String, String> defKeyMapping,
-      SortedSet<String> externalClassDefs, boolean lenient) {
+      SortedSet<String> externalClassDefs, List<CssDef> constantNodes, boolean lenient) {
     this.defKeyMapping = defKeyMapping;
     this.out = out;
+    this.constantNodes = constantNodes;
     this.lenient = lenient;
     this.externalClassDefs = externalClassDefs;
     newLine = true;
@@ -117,28 +119,40 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   }
 
   @Override
-  public boolean visit(CssEval x, Context ctx) {
-    printDef(x, EVAL, "eval");
-
-    return false;
-  }
-
-  @Override
-  public boolean visit(CssDef x, Context ctx) {
-    printDef(x, null, "def");
-
-    return false;
-  }
-
-  @Override
   public boolean visit(CssSprite x, Context ctx) {
     return false;
   }
 
   @Override
   public boolean visit(CssStylesheet x, Context ctx) {
-    if(externalClassDefs.isEmpty()) {
-      return true;
+    printExternalClasseDefinitions();
+    printConstantNodes();
+
+    return true;
+  }
+
+  private void printConstantNodes() {
+
+    for (CssDef node : constantNodes) {
+      if (node instanceof CssUrl) {
+        inUrl = true;
+        printDef(node, URL, "url");
+        inUrl = false;
+      } else if (node instanceof CssEval) {
+        printDef(node, EVAL, "eval");
+      } else {
+        printDef(node, null, "def");
+      }
+    }
+
+    if (!constantNodes.isEmpty()) {
+      out.newlineOpt();
+    }
+  }
+
+  private void printExternalClasseDefinitions() {
+    if (externalClassDefs.isEmpty()) {
+      return;
     }
 
     out.print(EXTERNAL);
@@ -158,7 +172,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
       }
     }
     semiColon();
-    return true;
   }
 
   @Override
@@ -236,7 +249,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
       // lenient mode: Try to parse the css rule and if an error occurs,
       // print a warning message and don't print the rule.
       try {
-        new GssParser(new SourceCode(null, "body{" + cssProperty +"}")).parse();
+        new GssParser(new SourceCode(null, "body{" + cssProperty + "}")).parse();
       } catch (GssParserException e) {
         System.err.println("[WARN] The following property is not valid and will be skipped: " +
             cssProperty);
@@ -376,18 +389,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     return true;
   }
 
-  @Override
-  public boolean visit(CssUrl x, Context ctx) {
-    inUrl = true;
-    printDef(x, URL, "url");
-    return false;
-  }
-
-  @Override
-  public void endVisit(CssUrl x, Context ctx) {
-    inUrl = false;
-  }
-
   private void printDef(CssDef def, String valueTemplate, String atRule) {
     out.print(DEF);
 
@@ -491,7 +492,8 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
           if (Strings.isNullOrEmpty(dotPathValue.getSuffix())) {
             expression = format(VALUE, dotPathValue.getPath());
           } else {
-            expression = format(VALUE_WITH_SUFFIX, dotPathValue.getPath(), dotPathValue.getSuffix());
+            expression =
+                format(VALUE_WITH_SUFFIX, dotPathValue.getPath(), dotPathValue.getSuffix());
           }
         }
       }
