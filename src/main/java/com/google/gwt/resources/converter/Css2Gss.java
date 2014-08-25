@@ -57,12 +57,14 @@ public class Css2Gss {
 
       DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor();
       defCollectorVisitor.accept(sheet);
+      Set<String> gssVarariableNames = new HashSet<String>(defCollectorVisitor.getDefMapping().values());
 
       ExternalClassesCollector externalClassesCollector = new ExternalClassesCollector();
       externalClassesCollector.accept(sheet);
       SortedSet<String> classes = externalClassesCollector.getClasses();
       removeWrongEntries(classes);
 
+      new UndefinedConstantVisitor(gssVarariableNames, lenient).accept(sheet);
       new ElseNodeCreator().accept(sheet);
       new AlternateAnnotationCreatorVisitor().accept(sheet);
       new FontFamilyVisitor().accept(sheet);

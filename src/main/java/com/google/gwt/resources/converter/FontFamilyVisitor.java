@@ -15,11 +15,9 @@
  */
 package com.google.gwt.resources.converter;
 
-import com.google.gwt.core.ext.Generator;
 import com.google.gwt.resources.css.ast.Context;
 import com.google.gwt.resources.css.ast.CssProperty;
 import com.google.gwt.resources.css.ast.CssProperty.ListValue;
-import com.google.gwt.resources.css.ast.CssProperty.Value;
 import com.google.gwt.resources.css.ast.CssVisitor;
 
 /**
@@ -27,27 +25,6 @@ import com.google.gwt.resources.css.ast.CssVisitor;
  * be mistaken for constants.
  */
 public class FontFamilyVisitor extends CssVisitor {
-
-  private static class SimpleValue extends Value {
-
-    private String value;
-
-    public SimpleValue(String value) {
-      this.value = value;
-    }
-
-    @Override
-    public String toCss() {
-      return Generator.escape(value);
-    }
-
-    @Override
-    public String getExpression() {
-      // The escaped CSS content has to be escaped to be a valid Java literal
-      return "\"" + toCss() + "\"";
-    }
-  }
-
   @Override
   public boolean visit(CssProperty x, Context ctx) {
 
