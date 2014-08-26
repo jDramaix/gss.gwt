@@ -16,19 +16,27 @@
 
 package com.google.gwt.resources.converter;
 
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.TreeLogger.Type;
+import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.util.DefaultTextOutput;
 import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
 import com.google.gwt.resources.css.ExternalClassesCollector;
 import com.google.gwt.resources.css.GenerateCssAst;
 import com.google.gwt.resources.css.ast.CssStylesheet;
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.UUID;
 
 /**
  * Converter from Css to Gss
@@ -40,9 +48,11 @@ public class Css2Gss {
   private final boolean lenient;
 
   public Css2Gss(String filePath) throws MalformedURLException {
-    cssFile = new File(filePath).toURI().toURL();
-    printWriter = new PrintWriter(System.err);
-    lenient = false;
+    this(new File(filePath).toURI().toURL(), new PrintWriter(System.err));
+  }
+
+  public Css2Gss(URL fileUrl, PrintWriter outputPrintWiter) {
+    this(fileUrl, outputPrintWiter, false);
   }
 
   public Css2Gss(URL fileUrl, PrintWriter outputPrintWiter, boolean lenient) {
@@ -57,7 +67,7 @@ public class Css2Gss {
 
       DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor();
       defCollectorVisitor.accept(sheet);
-      Set<String> gssVarariableNames = new HashSet<String>(defCollectorVisitor.getDefMapping().values());
+      Set<String> gssVariableNames = new HashSet<String>(defCollectorVisitor.getDefMapping().values());
 
       ExternalClassesCollector externalClassesCollector = new ExternalClassesCollector();
       externalClassesCollector.accept(sheet);
@@ -65,8 +75,7 @@ public class Css2Gss {
       removeWrongEntries(classes);
       removeWrongEscaping(classes);
 
-      new UndefinedConstantVisitor(gssVarariableNames, lenient).accept(sheet);
-
+      new UndefinedConstantVisitor(gssVariableNames, lenient).accept(sheet);
       new ElseNodeCreator().accept(sheet);
 
       new AlternateAnnotationCreatorVisitor().accept(sheet);

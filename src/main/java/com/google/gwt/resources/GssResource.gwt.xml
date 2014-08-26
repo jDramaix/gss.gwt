@@ -13,4 +13,7 @@
   <!-- functions in the css files -->
   <define-configuration-property name="CssResource.allowedFunctions" is-multi-valued="true" />
   <extend-configuration-property name="CssResource.allowedFunctions" value="" />
+  
+  <define-configuration-property name="CssResource.legacy" is-multi-valued="false" />
+  <set-configuration-property name="CssResource.legacy" value="false" />
 </module>

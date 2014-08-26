@@ -85,6 +85,7 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.util.Util;
+import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
 import com.google.gwt.i18n.client.LocaleInfo;
 import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.resources.client.CssResource.ClassName;
@@ -94,6 +95,10 @@ import com.google.gwt.resources.client.CssResource.NotStrict;
 import com.google.gwt.resources.client.CssResource.Shared;
 import com.google.gwt.resources.client.GssResource;
 import com.google.gwt.resources.client.ResourcePrototype;
+import com.google.gwt.resources.converter.Css2Gss;
+import com.google.gwt.resources.converter.DefCollectorVisitor;
+import com.google.gwt.resources.css.GenerateCssAst;
+import com.google.gwt.resources.css.ast.CssStylesheet;
 import com.google.gwt.resources.ext.ClientBundleRequirements;
 import com.google.gwt.resources.ext.ResourceContext;
 import com.google.gwt.resources.ext.ResourceGeneratorUtil;
@@ -113,7 +118,12 @@ import com.google.gwt.resources.rg.CssResourceGenerator.JClassOrderComparator;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.gwt.user.rebind.StringSourceWriter;
 
+import org.apache.commons.io.IOUtils;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -124,6 +134,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.zip.Adler32;
@@ -212,6 +223,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   // as short as possible. For instance if we have two GssResources to compile, the  prefix
   // for the first resource will be 'a' and the prefix for the second resource will be 'b' and so on
   private static final SubstitutionMap resourcePrefixBuilder = new MinimalSubstitutionMap();
+  private static final String KEY_LEGACY = "CssResource.legacy";
   private static final String KEY_STYLE = "CssResource.style";
   private static final String ALLOWED_AT_RULE = "CssResource.allowedAtRules";
   private static final String ALLOWED_FUNCTIONS = "CssResource.allowedFunctions";
@@ -254,6 +266,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   private Set<String> allowedAtRules;
   private Map<JClassType, Map<String, String>> replacementsByClassAndMethod;
   private Map<JMethod, String> replacementsForSharedMethods;
+  private boolean allowLegacy;
 
   @Override
   public String createAssignment(TreeLogger logger, ResourceContext context, JMethod method)
@@ -303,6 +316,9 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       ConfigurationProperty allowedFunctionsProperty = propertyOracle
           .getConfigurationProperty(ALLOWED_FUNCTIONS);
       allowedNonStandardFunctions.addAll(allowedFunctionsProperty.getValues());
+
+      allowLegacy =
+          "true".equals(propertyOracle.getConfigurationProperty(KEY_LEGACY).getValues().get(0));
 
       ClientBundleRequirements requirements = context.getRequirements();
       requirements.addConfigurationProperty(KEY_STYLE);
@@ -664,22 +680,46 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       throws UnableToCompleteException {
     List<SourceCode> sourceCodes = new ArrayList<SourceCode>(resources.size());
 
-    for (URL stylesheet : resources) {
-      TreeLogger branchLogger = logger.branch(TreeLogger.DEBUG,
-          "Parsing GSS stylesheet " + stylesheet.toExternalForm());
+    // assert that we only support either gss or css on one resource.
+    boolean css = ensureEitherCssOrGss(resources, logger);
 
-      try {
-        // TODO : always use UTF-8 to read the file ?
-        String fileContent = Resources.asByteSource(stylesheet).asCharSource(Charsets.UTF_8)
-            .read();
-        sourceCodes.add(new SourceCode(stylesheet.getFile(), fileContent));
-        continue;
-
-      } catch (IOException e) {
-        branchLogger.log(TreeLogger.ERROR, "Unable to parse CSS", e);
-      }
+    if (css && !allowLegacy) {
+      // TODO(dankurka): add link explaining the situation in detail.
+      logger.log(Type.ERROR,
+          "Your ClientBundle is referencing css files instead of gss. "
+          + "You will need to either convert these files to gss using the "
+          + "converter tool or turn on auto convertion in your gwt.xml file. "
+          + "Note: Autoconversion will be removed after 2.7, you will need to move to gss."
+          + "Add this line to your gwt.xml file to temporary avoid this:"
+          + "<set-configuration-property name=\"CssResource.legacy\" value=\"true\" />");
       throw new UnableToCompleteException();
     }
+
+    if (css) {
+      String concatenatedCss = concatCssFiles(resources, logger);
+      String gss = convertToGss(concatenatedCss, logger);
+      sourceCodes.add(new SourceCode("[auto-converted gss files]", gss));
+    } else {
+      for (URL stylesheet : resources) {
+        TreeLogger branchLogger = logger.branch(TreeLogger.DEBUG,
+            "Parsing GSS stylesheet " + stylesheet.toExternalForm());
+        try {
+          // TODO : always use UTF-8 to read the file ?
+          String fileContent =
+              Resources.asByteSource(stylesheet).asCharSource(Charsets.UTF_8).read();
+          sourceCodes.add(new SourceCode(stylesheet.getFile(), fileContent));
+          continue;
+
+        } catch (IOException e) {
+          branchLogger.log(TreeLogger.ERROR, "Unable to parse CSS", e);
+        }
+        throw new UnableToCompleteException();
+
+      }
+    }
+
+
+
 
     CssTree tree;
 
@@ -695,6 +735,66 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     checkErrors();
 
     return new ExtendedCssTree(tree, permutationAxes);
+  }
+
+  private String convertToGss(String concatenatedCss, TreeLogger logger) throws UnableToCompleteException {
+    File tempFile = null;
+    FileOutputStream fos = null;
+    try{
+      // We actually need a URL for the old CssResource to work. So create a temp file.
+      tempFile = File.createTempFile(UUID.randomUUID() + "css_converter", "css.tmp");
+
+      fos = new FileOutputStream(tempFile);
+      IOUtils.write(concatenatedCss, fos);
+      fos.close();
+
+      return new Css2Gss(tempFile.toURI().toURL(), new PrintWriter(System.err),
+          true).toGss();
+    } catch (IOException e) {
+      logger.log(Type.ERROR, "Error while writing temporary css file", e);
+      throw new UnableToCompleteException();
+    } finally {
+      if(tempFile != null) {
+        tempFile.delete();
+      }
+      if (fos!= null) {
+        IOUtils.closeQuietly(fos);
+      }
+    }
+  }
+
+  private String concatCssFiles(List<URL> resources, TreeLogger logger) throws UnableToCompleteException {
+    StringBuffer buffer = new StringBuffer();
+    for (URL stylesheet : resources) {
+      try {
+        String fileContent = Resources.asByteSource(stylesheet).asCharSource(Charsets.UTF_8)
+            .read();
+        buffer.append(fileContent);
+        buffer.append("\n");
+
+      } catch (IOException e) {
+        logger.log(TreeLogger.ERROR, "Unable to parse CSS", e);
+        throw new UnableToCompleteException();
+      }
+    }
+    return buffer.toString();
+  }
+
+  private boolean ensureEitherCssOrGss(List<URL> resources, TreeLogger logger)
+      throws UnableToCompleteException {
+    boolean css = resources.get(0).toString().endsWith(".css");
+    for (URL stylesheet : resources) {
+      if (css && !stylesheet.toString().endsWith(".css")) {
+        logger.log(Type.ERROR,
+            "Only either css files or gss files are supported on one interface");
+        throw new UnableToCompleteException();
+      } else if (!css && !stylesheet.toString().endsWith(".gss")) {
+        logger.log(Type.ERROR,
+            "Only either css files or gss files are supported on one interface");
+        throw new UnableToCompleteException();
+      }
+    }
+    return css;
   }
 
   private String printCssTree(CssTree tree) {
