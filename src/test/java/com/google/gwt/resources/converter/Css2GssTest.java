@@ -95,6 +95,12 @@ public class Css2GssTest {
         "constants.css", "constants.gss");
   }
 
+  @Test
+  public void testInvalidConstantName() throws IOException {
+    assertFileContentEqualsAfterConversion(
+        "invalidConstantName.css", "invalidConstantName.gss", true);
+  }
+
   private void assertFileContentEqualsAfterConversion(String inputCssFile, String expectedGssFile)
       throws IOException {
     assertFileContentEqualsAfterConversion(inputCssFile, expectedGssFile, false);
