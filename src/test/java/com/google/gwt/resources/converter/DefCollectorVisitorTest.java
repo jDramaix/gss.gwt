@@ -175,7 +175,7 @@ public class DefCollectorVisitorTest {
     // given
     when(cssDef.getKey()).thenReturn("myConstant");
     when(cssUrl.getKey()).thenReturn("my_constant");
-    when(cssEval.getKey()).thenReturn("my~constant");
+    when(cssEval.getKey()).thenReturn("my-constant");
 
 
     // when
