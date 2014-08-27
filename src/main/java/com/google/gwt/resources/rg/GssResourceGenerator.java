@@ -85,7 +85,6 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.dev.util.Util;
-import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
 import com.google.gwt.i18n.client.LocaleInfo;
 import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.resources.client.CssResource.ClassName;
@@ -96,9 +95,6 @@ import com.google.gwt.resources.client.CssResource.Shared;
 import com.google.gwt.resources.client.GssResource;
 import com.google.gwt.resources.client.ResourcePrototype;
 import com.google.gwt.resources.converter.Css2Gss;
-import com.google.gwt.resources.converter.DefCollectorVisitor;
-import com.google.gwt.resources.css.GenerateCssAst;
-import com.google.gwt.resources.css.ast.CssStylesheet;
 import com.google.gwt.resources.ext.ClientBundleRequirements;
 import com.google.gwt.resources.ext.ResourceContext;
 import com.google.gwt.resources.ext.ResourceGeneratorUtil;
@@ -117,7 +113,6 @@ import com.google.gwt.resources.gss.RuntimeConditionalNodeCollector;
 import com.google.gwt.resources.rg.CssResourceGenerator.JClassOrderComparator;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.gwt.user.rebind.StringSourceWriter;
-
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
@@ -717,9 +712,6 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
       }
     }
-
-
-
 
     CssTree tree;
 

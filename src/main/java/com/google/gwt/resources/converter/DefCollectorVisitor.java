@@ -17,48 +17,94 @@
 package com.google.gwt.resources.converter;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.gwt.resources.css.ast.Context;
 import com.google.gwt.resources.css.ast.CssDef;
 import com.google.gwt.resources.css.ast.CssEval;
 import com.google.gwt.resources.css.ast.CssUrl;
 import com.google.gwt.resources.css.ast.CssVisitor;
 
-import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * GSS requires that constants are defined in upper case. This visitor will collect all existing
  * constants, create the GSS compatible name of each constant and returns a mapping of all
  * original names with the new generated name.
+ * <p/>
+ * This visitor lists also all constant nodes.
  */
 public class DefCollectorVisitor extends CssVisitor {
+  private static final Pattern INVALID_CHAR = Pattern.compile("[^A-Z0-9_]");
 
-  private final Map<String, String> defMapping;
+  private int RENAMING_COUNTER = 0;
+  private final BiMap<String, String> defMapping;
+  private final List<CssDef> constantNodes;
+  private final boolean lenient;
 
-  public DefCollectorVisitor() {
-    this.defMapping = new HashMap<String, String>();
+  public DefCollectorVisitor(boolean lenient) {
+    this.lenient = lenient;
+    defMapping = HashBiMap.create();
+    constantNodes = new LinkedList<CssDef>();
   }
 
   public Map<String, String> getDefMapping() {
     return defMapping;
   }
 
+  public List<CssDef> getConstantNodes() {
+    return constantNodes;
+  }
+
   @Override
   public boolean visit(CssEval x, Context ctx) {
-    defMapping.put(x.getKey(), toUpperCase(x.getKey()));
-    return false;
+    return handleDefNode(x);
   }
 
   @Override
   public boolean visit(CssDef x, Context ctx) {
-    defMapping.put(x.getKey(), toUpperCase(x.getKey()));
-    return false;
+    return handleDefNode(x);
   }
 
   @Override
   public boolean visit(CssUrl x, Context ctx) {
-    defMapping.put(x.getKey(), toUpperCase(x.getKey()));
+    return handleDefNode(x);
+  }
+
+  private boolean handleDefNode(CssDef def) {
+    constantNodes.add(def);
+
+    String upperCaseName = toUpperCase(def.getKey());
+
+    if (defMapping.containsValue(upperCaseName)) {
+      if (lenient) {
+        System.err.println("[WARN] Two constants have the same name ["+ upperCaseName + "] after" +
+            " conversion. The second constant will be renamed automatically.");
+        upperCaseName = renameConstant(upperCaseName);
+      } else {
+        throw new Css2GssConversionException("Two constants have the same name ["+ upperCaseName +
+        "] after conversion.");
+      }
+
+    }
+
+    defMapping.forcePut(def.getKey(), upperCaseName);
+
     return false;
+  }
+
+  private String renameConstant(String originalName) {
+    String newName = originalName;
+
+    while (defMapping.containsValue(newName)) {
+      newName = originalName + "__RENAMED__" + RENAMING_COUNTER;
+      RENAMING_COUNTER++;
+    }
+
+    return newName;
   }
 
   private String toUpperCase(String camelCase) {
@@ -72,12 +118,19 @@ public class DefCollectorVisitor extends CssVisitor {
       char c = camelCase.charAt(i);
       if (Character.isUpperCase(c)) {
         output.append('_').append(c);
-      } else {
+      }  else {
         output.append(Character.toUpperCase(c));
       }
     }
 
-    return output.toString();
+    String validName = INVALID_CHAR.matcher(output).replaceAll("_");
+
+    if (validName.length() > output.length()) {
+      System.err.println("[WARN] Invalid characters detected in [" + camelCase + "]. They have " +
+          "been replaced [" + validName + "]");
+    }
+
+    return validName;
   }
 
   private boolean isUpperCase(String camelCase) {

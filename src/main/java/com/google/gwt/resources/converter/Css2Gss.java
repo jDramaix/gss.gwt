@@ -16,27 +16,19 @@
 
 package com.google.gwt.resources.converter;
 
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.util.DefaultTextOutput;
 import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
 import com.google.gwt.resources.css.ExternalClassesCollector;
 import com.google.gwt.resources.css.GenerateCssAst;
 import com.google.gwt.resources.css.ast.CssStylesheet;
 
-import org.apache.commons.io.IOUtils;
-
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.UUID;
 
 /**
  * Converter from Css to Gss
@@ -65,7 +57,7 @@ public class Css2Gss {
     try {
       CssStylesheet sheet = GenerateCssAst.exec(new PrintWriterTreeLogger(printWriter), cssFile);
 
-      DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor();
+      DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(lenient);
       defCollectorVisitor.accept(sheet);
       Set<String> gssVariableNames = new HashSet<String>(defCollectorVisitor.getDefMapping().values());
 
@@ -82,12 +74,9 @@ public class Css2Gss {
 
       new FontFamilyVisitor().accept(sheet);
 
-      ConstantsCollector constantsCollector = new ConstantsCollector();
-      constantsCollector.accept(sheet);
-
       GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(
           new DefaultTextOutput(false), defCollectorVisitor.getDefMapping(), classes,
-          constantsCollector.getConstantNodes(), lenient);
+          defCollectorVisitor.getConstantNodes(), lenient);
       gssGenerationVisitor.accept(sheet);
 
       return gssGenerationVisitor.getContent();
