@@ -56,7 +56,7 @@ public class GssResourceTest extends RenamingClassNameTest {
   public void testEval() {
     String text = res().eval().getText();
 
-    assertTrue(text.contains("{color:#fff;background-color:#f00}"));
+    assertTrue(text.contains("{color:#fff;background-color:#f00;width:30px}"));
   }
 
   public void testSprite() {
