@@ -66,6 +66,7 @@ public class Css2Gss {
       SortedSet<String> classes = externalClassesCollector.getClasses();
       removeWrongEntries(classes);
       removeWrongEscaping(classes);
+      removePseudoClasses(classes, lenient);
 
       new UndefinedConstantVisitor(gssVariableNames, lenient).accept(sheet);
       new ElseNodeCreator().accept(sheet);
@@ -84,6 +85,22 @@ public class Css2Gss {
       printWriter.flush();
       throw new RuntimeException(e);
     }
+  }
+
+  private void removePseudoClasses(SortedSet<String> classes, boolean lenient) {
+    Set<String> toRemove = new HashSet<String>();
+
+    for (String clazzName : classes) {
+      if (clazzName.contains(":")) {
+        if (lenient) {
+          toRemove.add(clazzName);
+        } else {
+          throw new Css2GssConversionException(
+              "One of your external statements contains a pseudo class: " + clazzName);
+        }
+      }
+    }
+    classes.removeAll(toRemove);
   }
 
   private void removeWrongEscaping(SortedSet<String> classes) {

@@ -53,7 +53,7 @@ public class Css2GssTest {
 
   @Test
   public void testExternalMissingComma() throws IOException {
-    assertFileContentEqualsAfterConversion("external-bug.css", "external-bug.gss");
+    assertFileContentEqualsAfterConversion("external-bug.css", "external-bug.gss", true);
   }
 
   @Test
@@ -68,7 +68,7 @@ public class Css2GssTest {
 
   @Test
   public void testExternalBug() throws IOException {
-    assertFileContentEqualsAfterConversion("external-bug.css", "external-bug.gss");
+    assertFileContentEqualsAfterConversion("external-bug.css", "external-bug.gss", true);
   }
 
   @Test
