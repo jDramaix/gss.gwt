@@ -6,3 +6,9 @@ pre {
   /* @alternate */ white-space: -o-pre-wrap;
   word-wrap: break-word;
 }
+
+.foo {
+  gwt-sprite: "bar";
+  height: 10px;
+  /* @alternate */ height: 20px;
+}

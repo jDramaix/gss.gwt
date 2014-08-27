@@ -18,6 +18,7 @@ package com.google.gwt.resources.converter;
 import com.google.gwt.resources.css.ast.Context;
 import com.google.gwt.resources.css.ast.CssProperty;
 import com.google.gwt.resources.css.ast.CssRule;
+import com.google.gwt.resources.css.ast.CssSprite;
 import com.google.gwt.resources.css.ast.CssVisitor;
 
 import java.util.HashSet;
@@ -32,6 +33,17 @@ public class AlternateAnnotationCreatorVisitor extends CssVisitor {
   @Override
   public boolean visit(CssRule x, Context ctx) {
     List<CssProperty> properties = x.getProperties();
+    annotateDuplicateProperties(properties);
+    return false;
+  }
+
+  @Override
+  public boolean visit(CssSprite x, Context ctx) {
+    annotateDuplicateProperties(x.getProperties());
+    return false;
+  }
+
+  private void annotateDuplicateProperties(List<CssProperty> properties) {
     Set<String> duplicatePropertyNames = new HashSet<String>();
     Set<String> seenPropertyNames = new HashSet<String>();
 
@@ -57,6 +69,5 @@ public class AlternateAnnotationCreatorVisitor extends CssVisitor {
         }
       }
     }
-    return false;
   }
 }
