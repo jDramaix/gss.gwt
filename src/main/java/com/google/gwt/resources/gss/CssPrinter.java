@@ -138,7 +138,7 @@ public class CssPrinter extends CompactPrinter {
   @Override
   protected void appendValueNode(CssValueNode node) {
     if (node instanceof CssJavaExpressionNode || node instanceof CssDotPathNode) {
-      concat(node.getValue());
+      concat("(" + node.getValue() + ")");
     } else {
       super.appendValueNode(node);
     }

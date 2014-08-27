@@ -16,12 +16,16 @@
 
 package com.google.gwt.resources.client;
 
-public class Colors {
+public class Constants {
   public static String white() {
     return "#fff";
   }
 
   public static String red(String test) {
     return "#f00";
+  }
+
+  public static int width() {
+    return 45;
   }
 }
