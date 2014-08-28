@@ -22,6 +22,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicates;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Lists;
@@ -95,6 +96,7 @@ import com.google.gwt.resources.client.CssResource.Shared;
 import com.google.gwt.resources.client.GssResource;
 import com.google.gwt.resources.client.ResourcePrototype;
 import com.google.gwt.resources.converter.Css2Gss;
+import com.google.gwt.resources.converter.Css2GssConversionException;
 import com.google.gwt.resources.ext.ClientBundleRequirements;
 import com.google.gwt.resources.ext.ResourceContext;
 import com.google.gwt.resources.ext.ResourceGeneratorUtil;
@@ -180,30 +182,26 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
   }
 
-  // TODO rename this class
-  private static class OptimizationInfo {
-    final ConstantDefinitions constantDefinitions;
+  private static class ConversionResult {
+    final String gss;
+    final Map<String, String> defNameMapping;
 
-    private OptimizationInfo(ConstantDefinitions constantDefinitions) {
-      this.constantDefinitions = constantDefinitions;
+    private ConversionResult(String gss,  Map<String, String> defNameMapping) {
+      this.gss = gss;
+      this.defNameMapping = defNameMapping;
     }
   }
 
   private static class ExtendedCssTree {
-    private final CssTree tree;
-    private final List<String> permutationAxes;
+    final CssTree tree;
+    final List<String> permutationAxes;
+    final Map<String, String> originalConstantNameMapping;
 
-    private ExtendedCssTree(CssTree tree, List<String> permutationAxis) {
+    private ExtendedCssTree(CssTree tree, List<String> permutationAxis,
+        Map<String, String> originalConstantNameMapping) {
       this.tree = tree;
       this.permutationAxes = permutationAxis;
-    }
-
-    public CssTree getCssTree() {
-      return tree;
-    }
-
-    public List<String> getPermutationAxes() {
-      return permutationAxes;
+      this.originalConstantNameMapping = originalConstantNameMapping;
     }
   }
 
@@ -219,6 +217,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   // for the first resource will be 'a' and the prefix for the second resource will be 'b' and so on
   private static final SubstitutionMap resourcePrefixBuilder = new MinimalSubstitutionMap();
   private static final String KEY_LEGACY = "CssResource.legacy";
+  private static final String KEY_CONVERSION_MODE = "CssResource.conversionMode";
   private static final String KEY_STYLE = "CssResource.style";
   private static final String ALLOWED_AT_RULE = "CssResource.allowedAtRules";
   private static final String ALLOWED_FUNCTIONS = "CssResource.allowedFunctions";
@@ -249,7 +248,6 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     return b.toString();
   }
 
-
   private Map<JMethod, ExtendedCssTree> cssTreeMap;
   private Set<String> allowedNonStandardFunctions;
   private LoggerErrorManager errorManager;
@@ -262,18 +260,19 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   private Map<JClassType, Map<String, String>> replacementsByClassAndMethod;
   private Map<JMethod, String> replacementsForSharedMethods;
   private boolean allowLegacy;
+  private boolean lenientConversion;
 
   @Override
   public String createAssignment(TreeLogger logger, ResourceContext context, JMethod method)
       throws UnableToCompleteException {
     ExtendedCssTree extendedCssTree = cssTreeMap.get(method);
 
-    Map<String, String> substitutionMap = doClassRenaming(extendedCssTree.getCssTree(),
+    Map<String, String> substitutionMap = doClassRenaming(extendedCssTree.tree,
         method, logger, context);
 
     // TODO : Should we foresee configuration properties for simplifyCss and eliminateDeadCode
     // booleans ?
-    OptimizationInfo optimizationInfo = optimize(extendedCssTree, context, true, true);
+    ConstantDefinitions constantDefinitions = optimize(extendedCssTree, context, true, true);
 
     checkErrors();
 
@@ -281,7 +280,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     sw.println("new " + method.getReturnType().getQualifiedSourceName() + "() {");
     sw.indent();
 
-    writeMethods(logger, context, method, sw, optimizationInfo, substitutionMap);
+    writeMethods(logger, context, method, sw, constantDefinitions,
+        extendedCssTree.originalConstantNameMapping, substitutionMap);
 
     sw.outdent();
     sw.println("}");
@@ -312,12 +312,18 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
           .getConfigurationProperty(ALLOWED_FUNCTIONS);
       allowedNonStandardFunctions.addAll(allowedFunctionsProperty.getValues());
 
-      allowLegacy =
-          "true".equals(propertyOracle.getConfigurationProperty(KEY_LEGACY).getValues().get(0));
+      allowLegacy = "true".equals(propertyOracle.getConfigurationProperty(KEY_LEGACY).getValues()
+          .get(0));
+      lenientConversion = "lenient".equals(propertyOracle
+          .getConfigurationProperty(KEY_CONVERSION_MODE).getValues().get(0));
 
       ClientBundleRequirements requirements = context.getRequirements();
       requirements.addConfigurationProperty(KEY_STYLE);
       requirements.addConfigurationProperty(KEY_OBFUSCATION_PREFIX);
+      requirements.addConfigurationProperty(ALLOWED_AT_RULE);
+      requirements.addConfigurationProperty(ALLOWED_FUNCTIONS);
+      requirements.addConfigurationProperty(KEY_LEGACY);
+      requirements.addConfigurationProperty(KEY_CONVERSION_MODE);
     } catch (BadPropertyValueException e) {
       logger.log(TreeLogger.ERROR, "Unable to query module property", e);
       throw new UnableToCompleteException();
@@ -449,11 +455,11 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       }
     }
 
-    ExtendedCssTree finalTree = new ExtendedCssTree(deepCopy(extTree.getCssTree()),
-        extTree.getPermutationAxes());
+    ExtendedCssTree finalTree = new ExtendedCssTree(deepCopy(extTree.tree),
+        extTree.permutationAxes, extTree.originalConstantNameMapping);
     cssTreeMap.put(method, finalTree);
 
-    for (String permutationAxis : extTree.getPermutationAxes()) {
+    for (String permutationAxis : extTree.permutationAxes) {
       try {
         context.getRequirements().addPermutationAxis(permutationAxis);
       } catch (BadPropertyValueException e) {
@@ -466,7 +472,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   @Override
   protected String getCssExpression(TreeLogger logger, ResourceContext context,
       JMethod method) throws UnableToCompleteException {
-    CssTree cssTree = cssTreeMap.get(method).getCssTree();
+    CssTree cssTree = cssTreeMap.get(method).tree;
 
     String standard = printCssTree(cssTree);
 
@@ -573,9 +579,9 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
   }
 
-  private OptimizationInfo optimize(ExtendedCssTree extendedCssTree, ResourceContext context,
+  private ConstantDefinitions optimize(ExtendedCssTree extendedCssTree, ResourceContext context,
       boolean simplifyCss, boolean eliminateDeadStyles) throws UnableToCompleteException {
-    CssTree cssTree = extendedCssTree.getCssTree();
+    CssTree cssTree = extendedCssTree.tree;
 
     // Collect mixin definitions and replace mixins
     CollectMixinDefinitions collectMixinDefinitions = new CollectMixinDefinitions(
@@ -591,7 +597,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     runtimeConditionalNodeCollector.runPass();
 
     new ExtendedEliminateConditionalNodes(cssTree.getMutatingVisitController(),
-        getPermutationsConditions(context, extendedCssTree.getPermutationAxes()),
+        getPermutationsConditions(context, extendedCssTree.permutationAxes),
         runtimeConditionalNodeCollector.getRuntimeConditionalNodes()).runPass();
 
     new DisallowDefInsideRuntimeConditionalNode(cssTree.getVisitController(),
@@ -641,7 +647,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       new EliminateUselessRulesetNodes(cssTree).runPass();
     }
 
-    return new OptimizationInfo(collectConstantDefinitionsPass.getConstantDefinitions());
+    return collectConstantDefinitionsPass.getConstantDefinitions();
   }
 
   private Set<String> getPermutationsConditions(ResourceContext context,
@@ -674,6 +680,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   private ExtendedCssTree parseResources(List<URL> resources, TreeLogger logger)
       throws UnableToCompleteException {
     List<SourceCode> sourceCodes = new ArrayList<SourceCode>(resources.size());
+    ImmutableMap.Builder<String, String> constantNameMappingBuilder = ImmutableMap.builder();
 
     // assert that we only support either gss or css on one resource.
     boolean css = ensureEitherCssOrGss(resources, logger);
@@ -692,8 +699,13 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     if (css) {
       String concatenatedCss = concatCssFiles(resources, logger);
-      String gss = convertToGss(concatenatedCss, logger);
+
+      ConversionResult result = convertToGss(concatenatedCss, logger);
+
+      String gss = result.gss;
       sourceCodes.add(new SourceCode("[auto-converted gss files]", gss));
+
+      constantNameMappingBuilder.putAll(result.defNameMapping);
     } else {
       for (URL stylesheet : resources) {
         TreeLogger branchLogger = logger.branch(TreeLogger.DEBUG,
@@ -726,13 +738,13 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     checkErrors();
 
-    return new ExtendedCssTree(tree, permutationAxes);
+    return new ExtendedCssTree(tree, permutationAxes, constantNameMappingBuilder.build());
   }
 
-  private String convertToGss(String concatenatedCss, TreeLogger logger) throws UnableToCompleteException {
+  private ConversionResult convertToGss(String concatenatedCss, TreeLogger logger) throws UnableToCompleteException {
     File tempFile = null;
     FileOutputStream fos = null;
-    try{
+    try {
       // We actually need a URL for the old CssResource to work. So create a temp file.
       tempFile = File.createTempFile(UUID.randomUUID() + "css_converter", "css.tmp");
 
@@ -740,8 +752,21 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       IOUtils.write(concatenatedCss, fos);
       fos.close();
 
-      return new Css2Gss(tempFile.toURI().toURL(), new PrintWriter(System.err),
-          true).toGss();
+      Css2Gss converter = new Css2Gss(tempFile.toURI().toURL(), new PrintWriter(System.out),
+          lenientConversion);
+
+      return new ConversionResult(converter.toGss(), converter.getDefNameMapping());
+
+    } catch (Css2GssConversionException e) {
+      String message = "An error occurs during the automatic conversion: " + e.getMessage();
+      if (!lenientConversion) {
+        message += "\n You should try to change the faulty css to fix this error. If you are " +
+            "unable to change the css, you can setup the automatic conversion to be lenient. Add " +
+            "the following line to your gwt.xml file: " +
+            "<set-configuration-property name=\"CssResource.conversionMode\" value=\"lenient\" />";
+      }
+      logger.log(Type.ERROR, message, e);
+      throw new UnableToCompleteException();
     } catch (IOException e) {
       logger.log(Type.ERROR, "Error while writing temporary css file", e);
       throw new UnableToCompleteException();
@@ -892,7 +917,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   }
 
   private void writeMethods(TreeLogger logger, ResourceContext context, JMethod method,
-      SourceWriter sw, OptimizationInfo optimizationInfo, Map<String, String> substitutionMap)
+      SourceWriter sw, ConstantDefinitions constantDefinitions,
+      Map<String, String> originalConstantNameMapping, Map<String, String> substitutionMap)
       throws UnableToCompleteException {
     JClassType gssResource = method.getReturnType().isInterface();
 
@@ -906,8 +932,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       } else if (toImplement == getNameMethod) {
         writeGetName(method, sw);
       } else {
-        success &= writeUserMethod(logger, toImplement, sw, optimizationInfo,
-            substitutionMap);
+        success &= writeUserMethod(logger, toImplement, sw, constantDefinitions,
+            originalConstantNameMapping, substitutionMap);
       }
     }
 
@@ -917,8 +943,10 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   }
 
   private boolean writeUserMethod(TreeLogger logger, JMethod userMethod,
-      SourceWriter sw, OptimizationInfo optimizationInfo, Map<String, String> substitutionMap)
+      SourceWriter sw, ConstantDefinitions constantDefinitions,
+      Map<String, String> originalConstantNameMapping, Map<String, String> substitutionMap)
       throws UnableToCompleteException {
+
     String className = getClassName(userMethod);
     // method to access style class ?
     if (substitutionMap.containsKey(className)) {
@@ -926,13 +954,20 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     }
 
     // method to access constant value ?
-    ConstantDefinitions constantDefinitions = optimizationInfo.constantDefinitions;
-    CssDefinitionNode definitionNode =
-        constantDefinitions.getConstantDefinition(userMethod.getName());
+    CssDefinitionNode definitionNode;
+    String methodName = userMethod.getName();
 
-    if (definitionNode == null) {
-      // try with upper case
-      definitionNode = constantDefinitions.getConstantDefinition(toUpperCase(userMethod.getName()));
+    if (originalConstantNameMapping.containsKey(methodName)) {
+      // method name maps a constant that was renamed during the auto conversion
+      String constantName = originalConstantNameMapping.get(methodName);
+      definitionNode = constantDefinitions.getConstantDefinition(constantName);
+    } else {
+      definitionNode = constantDefinitions.getConstantDefinition(methodName);
+
+      if (definitionNode == null) {
+        // try with upper case
+        definitionNode = constantDefinitions.getConstantDefinition(toUpperCase(methodName));
+      }
     }
 
     if (definitionNode != null) {

@@ -16,6 +16,7 @@
 package com.google.gwt.resources.converter;
 
 
+import com.google.gwt.core.ext.UnableToCompleteException;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,83 +32,83 @@ import java.net.URL;
 public class Css2GssTest {
 
   @Test
-  public void testInlineBlockCssEscaping() throws IOException {
+  public void testInlineBlockCssEscaping() throws Exception {
     assertFileContentEqualsAfterConversion("inline-block.css", "inline-block.gss");
   }
 
   @Test
-  public void testMultipleDeclarationOfSameProperty() throws IOException {
+  public void testMultipleDeclarationOfSameProperty() throws Exception {
     assertFileContentEqualsAfterConversion("multiple_declarations.css",
         "multiple_declarations.gss");
   }
 
   @Test
-  public void testCssConditional() throws IOException {
+  public void testCssConditional() throws Exception {
     assertFileContentEqualsAfterConversion("conditional.css", "conditional.gss");
   }
 
   @Test
-  public void testLenientFlag() throws IOException {
+  public void testLenientFlag() throws Exception {
     assertFileContentEqualsAfterConversion("badRule.css", "badRule.gss", true);
   }
 
   @Test
-  public void testExternalMissingComma() throws IOException {
+  public void testExternalMissingComma() throws Exception {
     assertFileContentEqualsAfterConversion("external-bug.css", "external-bug.gss", true);
   }
 
   @Test
-  public void testSprite() throws IOException {
+  public void testSprite() throws Exception {
     assertFileContentEqualsAfterConversion("sprite.css", "sprite.gss");
   }
 
   @Test
-  public void testFontFamily() throws IOException {
+  public void testFontFamily() throws Exception {
     assertFileContentEqualsAfterConversion("font-bug.css", "font-bug.gss");
   }
 
   @Test
-  public void testExternalBug() throws IOException {
+  public void testExternalBug() throws Exception {
     assertFileContentEqualsAfterConversion("external-bug.css", "external-bug.gss", true);
   }
 
   @Test
-  public void testUndefinedConstant() throws IOException {
+  public void testUndefinedConstant() throws Exception {
     assertFileContentEqualsAfterConversion(
         "undefined-constants.css", "undefined-constants.gss", true);
   }
 
   @Test
-  public void testRemoveExternalEscaping() throws IOException {
+  public void testRemoveExternalEscaping() throws Exception {
     assertFileContentEqualsAfterConversion(
         "external-escaping.css", "external-escaping.gss");
   }
 
   @Test
-  public void testNestedConditional() throws IOException {
+  public void testNestedConditional() throws Exception {
     assertFileContentEqualsAfterConversion(
         "nestedElseIf.css", "nestedElseIf.gss");
   }
 
   @Test
-  public void testConstants() throws IOException {
+  public void testConstants() throws Exception {
     assertFileContentEqualsAfterConversion(
         "constants.css", "constants.gss");
   }
 
   @Test
-  public void testInvalidConstantName() throws IOException {
+  public void testInvalidConstantName() throws IOException, UnableToCompleteException {
     assertFileContentEqualsAfterConversion(
         "invalidConstantName.css", "invalidConstantName.gss", true);
   }
 
   private void assertFileContentEqualsAfterConversion(String inputCssFile, String expectedGssFile)
-      throws IOException {
+      throws IOException, UnableToCompleteException {
     assertFileContentEqualsAfterConversion(inputCssFile, expectedGssFile, false);
   }
 
   private void assertFileContentEqualsAfterConversion(String inputCssFile,
-      String expectedGssFile, boolean lenient) throws IOException {
+      String expectedGssFile, boolean lenient) throws IOException, UnableToCompleteException {
     URL resource = Css2GssTest.class.getResource(inputCssFile);
     InputStream stream = Css2GssTest.class.getResourceAsStream(expectedGssFile);
     String convertedGss = new Css2Gss(resource, new PrintWriter(System.err), lenient).toGss();
