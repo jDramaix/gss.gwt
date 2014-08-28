@@ -958,7 +958,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     String methodName = userMethod.getName();
 
     if (originalConstantNameMapping.containsKey(methodName)) {
-      // method name maps a constant that was renamed during the auto conversion
+      // method name maps a constant that has been renamed during the auto conversion
       String constantName = originalConstantNameMapping.get(methodName);
       definitionNode = constantDefinitions.getConstantDefinition(constantName);
     } else {
