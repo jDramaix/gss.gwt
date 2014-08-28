@@ -141,6 +141,7 @@
                             <value>-war ${basedir}/src/test/war</value>
                         </property>
                     </systemProperties>
+                    <argLine>-Xmx1024m</argLine>
                 </configuration>
             </plugin>
             <plugin>

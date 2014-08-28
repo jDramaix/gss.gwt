@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Daniel Kurka.
+ * Copyright 2014 Julien Dramaix.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -13,16 +13,16 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.resources.converter;
 
-import com.google.gwt.resources.css.ast.CssCompilerException;
+package com.google.gwt.resources.client;
 
-/**
- * Css2GssConversionException signals a problem with the conversion from CSS to GSS.
- */
-public class Css2GssConversionException extends CssCompilerException {
-
-  public Css2GssConversionException(String message) {
-    super(message);
+public interface AutoConversionBundle extends ClientBundle {
+  interface ConstantRenaming extends GssResource {
+    int myConstant();
+    String my_constant();
+    int ie6();
+    int gecko1_8();
   }
+
+  ConstantRenaming constantRenaming();
 }

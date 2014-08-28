@@ -13,7 +13,12 @@
   <!-- functions in the css files -->
   <define-configuration-property name="CssResource.allowedFunctions" is-multi-valued="true" />
   <extend-configuration-property name="CssResource.allowedFunctions" value="" />
-  
+
+  <!-- Enable the in-memory conversion of css files with .css extension to GSS -->
   <define-configuration-property name="CssResource.legacy" is-multi-valued="false" />
   <set-configuration-property name="CssResource.legacy" value="false" />
+
+  <!-- Set the mode used by the in-memory conversion: strict or lenient -->
+  <define-configuration-property name="CssResource.conversionMode" is-multi-valued="false" />
+  <set-configuration-property name="CssResource.conversionMode" value="strict" />
 </module>

@@ -32,6 +32,7 @@ public class AllGwtTests extends GWTTestSuite {
     suite.addTestSuite(StableShortTypeObfuscationStyleTest.class);
     suite.addTestSuite(StableNoTypeObfuscationStyleTest.class);
     suite.addTestSuite(StableObfuscationStyleTest.class);
+    suite.addTestSuite(AutoConversionTest.class);
     return suite;
   }
 }

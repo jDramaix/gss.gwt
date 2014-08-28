@@ -94,7 +94,6 @@ public class PermutationsCollector extends DefaultTreeVisitor implements CssComp
         permutationAxesListBuilder.add(permutationName);
 
       } else {
-        // TODO warning or error ?
         GssError warning = new GssError("The expression [" + booleanExpressionNode.getValue() +
             "] cannot be evaluated. It will be considered as false.",
             booleanExpressionNode.getSourceCodeLocation());

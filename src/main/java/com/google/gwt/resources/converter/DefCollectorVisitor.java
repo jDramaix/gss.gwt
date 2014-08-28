@@ -77,22 +77,26 @@ public class DefCollectorVisitor extends CssVisitor {
   private boolean handleDefNode(CssDef def) {
     constantNodes.add(def);
 
-    String upperCaseName = toUpperCase(def.getKey());
+    if (!defMapping.containsKey(def.getKey())) {
 
-    if (defMapping.containsValue(upperCaseName)) {
-      if (lenient) {
-        System.err.println("[WARN] Two constants have the same name ["+ upperCaseName + "] after" +
-            " conversion. The second constant will be renamed automatically.");
-        upperCaseName = renameConstant(upperCaseName);
-      } else {
-        throw new Css2GssConversionException("Two constants have the same name ["+ upperCaseName +
-        "] after conversion.");
+      String upperCaseName = toUpperCase(def.getKey());
+
+      if (defMapping.containsValue(upperCaseName)) {
+        if (lenient) {
+          System.err
+              .println("[WARN] Two constants have the same name [" + upperCaseName + "] after" +
+                  " conversion. The second constant will be renamed automatically.");
+          upperCaseName = renameConstant(upperCaseName);
+        } else {
+          throw new Css2GssConversionException(
+              "Two constants have the same name [" + upperCaseName +
+                  "] after conversion.");
+        }
+
       }
 
+      defMapping.forcePut(def.getKey(), upperCaseName);
     }
-
-    defMapping.forcePut(def.getKey(), upperCaseName);
-
     return false;
   }
 

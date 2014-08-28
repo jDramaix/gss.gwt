@@ -16,6 +16,7 @@
 
 package com.google.gwt.resources.converter;
 
+import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.util.DefaultTextOutput;
 import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
 import com.google.gwt.resources.css.ExternalClassesCollector;
@@ -27,6 +28,7 @@ import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 
@@ -38,6 +40,8 @@ public class Css2Gss {
   private final URL cssFile;
   private final PrintWriter printWriter;
   private final boolean lenient;
+
+  private Map<String, String> defNameMapping;
 
   public Css2Gss(String filePath) throws MalformedURLException {
     this(new File(filePath).toURI().toURL(), new PrintWriter(System.err));
@@ -53,13 +57,13 @@ public class Css2Gss {
     this.lenient = lenient;
   }
 
-  public String toGss() {
+  public String toGss() throws UnableToCompleteException {
     try {
       CssStylesheet sheet = GenerateCssAst.exec(new PrintWriterTreeLogger(printWriter), cssFile);
 
       DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(lenient);
       defCollectorVisitor.accept(sheet);
-      Set<String> gssVariableNames = new HashSet<String>(defCollectorVisitor.getDefMapping().values());
+      defNameMapping = defCollectorVisitor.getDefMapping();
 
       ExternalClassesCollector externalClassesCollector = new ExternalClassesCollector();
       externalClassesCollector.accept(sheet);
@@ -68,7 +72,8 @@ public class Css2Gss {
       removeWrongEscaping(classes);
       removePseudoClasses(classes, lenient);
 
-      new UndefinedConstantVisitor(gssVariableNames, lenient).accept(sheet);
+      new UndefinedConstantVisitor(new HashSet<String>(defNameMapping.values()),
+          lenient).accept(sheet);
       new ElseNodeCreator().accept(sheet);
 
       new AlternateAnnotationCreatorVisitor().accept(sheet);
@@ -81,10 +86,18 @@ public class Css2Gss {
       gssGenerationVisitor.accept(sheet);
 
       return gssGenerationVisitor.getContent();
-    } catch (Exception e) {
+    } finally {
       printWriter.flush();
-      throw new RuntimeException(e);
     }
+  }
+
+  /**
+   * GSS allows only uppercase letters and numbers for a name of the constant. The constants
+   * need to be renamed in order to be compatible with GSS. This method returns a mapping
+   * between the old name and the new name compatible with GSS.
+   */
+  public Map<String, String> getDefNameMapping() {
+    return defNameMapping;
   }
 
   private void removePseudoClasses(SortedSet<String> classes, boolean lenient) {
