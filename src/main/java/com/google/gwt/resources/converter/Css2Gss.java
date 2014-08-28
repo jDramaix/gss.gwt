@@ -92,8 +92,8 @@ public class Css2Gss {
   }
 
   /**
-   * GSS allowed only uppercase letters and numbers for a name of the constant. The constants
-   * needs to be renamed in order to be compatible with GSS. This method returns a mapping
+   * GSS allows only uppercase letters and numbers for a name of the constant. The constants
+   * need to be renamed in order to be compatible with GSS. This method returns a mapping
    * between the old name and the new name compatible with GSS.
    */
   public Map<String, String> getDefNameMapping() {
