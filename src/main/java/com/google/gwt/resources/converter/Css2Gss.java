@@ -16,6 +16,7 @@
 
 package com.google.gwt.resources.converter;
 
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.util.DefaultTextOutput;
 import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
@@ -36,32 +37,34 @@ import java.util.SortedSet;
  * Converter from Css to Gss
  */
 public class Css2Gss {
-
   private final URL cssFile;
-  private final PrintWriter printWriter;
+  private final TreeLogger treeLogger;
   private final boolean lenient;
 
   private Map<String, String> defNameMapping;
 
   public Css2Gss(String filePath) throws MalformedURLException {
-    this(new File(filePath).toURI().toURL(), new PrintWriter(System.err));
+    this(new File(filePath).toURI().toURL(), false);
   }
 
-  public Css2Gss(URL fileUrl, PrintWriter outputPrintWiter) {
-    this(fileUrl, outputPrintWiter, false);
+  public Css2Gss(URL fileUrl, TreeLogger treeLogger) {
+    this(fileUrl, treeLogger, false);
   }
 
-  public Css2Gss(URL fileUrl, PrintWriter outputPrintWiter, boolean lenient) {
+  public Css2Gss(URL fileUrl, TreeLogger treeLogger, boolean lenient) {
     cssFile = fileUrl;
-    printWriter = outputPrintWiter;
+    this.treeLogger = treeLogger;
     this.lenient = lenient;
   }
 
-  public String toGss() throws UnableToCompleteException {
-    try {
-      CssStylesheet sheet = GenerateCssAst.exec(new PrintWriterTreeLogger(printWriter), cssFile);
+  public Css2Gss(URL resource, boolean lenient) {
+    this(resource, new PrintWriterTreeLogger(new PrintWriter(System.out)), lenient);
+  }
 
-      DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(lenient);
+  public String toGss() throws UnableToCompleteException {
+      CssStylesheet sheet = GenerateCssAst.exec(treeLogger, cssFile);
+
+      DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(lenient, treeLogger);
       defCollectorVisitor.accept(sheet);
       defNameMapping = defCollectorVisitor.getDefMapping();
 
@@ -73,7 +76,7 @@ public class Css2Gss {
       removePseudoClasses(classes, lenient);
 
       new UndefinedConstantVisitor(new HashSet<String>(defNameMapping.values()),
-          lenient).accept(sheet);
+          lenient, treeLogger).accept(sheet);
       new ElseNodeCreator().accept(sheet);
 
       new AlternateAnnotationCreatorVisitor().accept(sheet);
@@ -82,13 +85,10 @@ public class Css2Gss {
 
       GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(
           new DefaultTextOutput(false), defCollectorVisitor.getDefMapping(), classes,
-          defCollectorVisitor.getConstantNodes(), lenient);
+          defCollectorVisitor.getConstantNodes(), lenient, treeLogger);
       gssGenerationVisitor.accept(sheet);
 
       return gssGenerationVisitor.getContent();
-    } finally {
-      printWriter.flush();
-    }
   }
 
   /**

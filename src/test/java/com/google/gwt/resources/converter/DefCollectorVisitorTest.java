@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.resources.css.ast.CssDef;
 import com.google.gwt.resources.css.ast.CssEval;
 import com.google.gwt.resources.css.ast.CssUrl;
@@ -38,6 +39,8 @@ public class DefCollectorVisitorTest {
   private CssDef cssDef;
   @Mock
   private CssUrl cssUrl;
+  @Mock
+  private TreeLogger treeLogger;
 
   @Test
   public void visit_CssEval_KeyInMapping() {
@@ -45,7 +48,7 @@ public class DefCollectorVisitorTest {
     when(cssEval.getKey()).thenReturn("eval");
 
     // when
-    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(false);
+    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(false, treeLogger);
     defCollectorVisitor.visit(cssEval, null);
 
     Map<String, String> mapping = defCollectorVisitor.getDefMapping();
@@ -61,7 +64,7 @@ public class DefCollectorVisitorTest {
     when(cssDef.getKey()).thenReturn("def");
 
     // when
-    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(false);
+    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(false, treeLogger);
     defCollectorVisitor.visit(cssDef, null);
 
     Map<String, String> mapping = defCollectorVisitor.getDefMapping();
@@ -77,7 +80,7 @@ public class DefCollectorVisitorTest {
     when(cssUrl.getKey()).thenReturn("url");
 
     // when
-    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(false);
+    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(false, treeLogger);
     defCollectorVisitor.visit(cssUrl, null);
 
     Map<String, String> mapping = defCollectorVisitor.getDefMapping();
@@ -94,7 +97,7 @@ public class DefCollectorVisitorTest {
     when(cssDef.getKey()).thenReturn("myConstantName");
 
     // when
-    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(false);
+    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(false, treeLogger);
     defCollectorVisitor.visit(cssDef, null);
 
     // then
@@ -111,7 +114,7 @@ public class DefCollectorVisitorTest {
     when(cssDef.getKey()).thenReturn("MY_UPPERCASE_CONSTANT");
 
     // when
-    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(false);
+    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(false, treeLogger);
     defCollectorVisitor.visit(cssDef, null);
 
     Map<String, String> mapping = defCollectorVisitor.getDefMapping();
@@ -127,7 +130,7 @@ public class DefCollectorVisitorTest {
     when(cssDef.getKey()).thenReturn("my-invalid~constant");
 
     // when
-    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(false);
+    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(false, treeLogger);
     defCollectorVisitor.visit(cssDef, null);
 
     Map<String, String> mapping = defCollectorVisitor.getDefMapping();
@@ -144,7 +147,7 @@ public class DefCollectorVisitorTest {
     when(cssUrl.getKey()).thenReturn("my_constant");
 
     // when
-    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(false);
+    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(false, treeLogger);
     defCollectorVisitor.visit(cssDef, null);
     // will throws an exception
     defCollectorVisitor.visit(cssUrl, null);
@@ -157,7 +160,7 @@ public class DefCollectorVisitorTest {
     when(cssUrl.getKey()).thenReturn("my_constant");
 
     // when
-    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(true);
+    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(true, treeLogger);
     defCollectorVisitor.visit(cssDef, null);
     defCollectorVisitor.visit(cssUrl, null);
 
@@ -179,7 +182,7 @@ public class DefCollectorVisitorTest {
 
 
     // when
-    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(true);
+    DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(true, treeLogger);
     defCollectorVisitor.visit(cssDef, null);
     defCollectorVisitor.visit(cssUrl, null);
     defCollectorVisitor.visit(cssEval, null);

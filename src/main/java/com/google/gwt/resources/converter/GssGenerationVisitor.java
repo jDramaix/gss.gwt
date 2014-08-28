@@ -22,6 +22,8 @@ import com.google.common.base.Strings;
 import com.google.common.css.SourceCode;
 import com.google.common.css.compiler.ast.GssParser;
 import com.google.common.css.compiler.ast.GssParserException;
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.dev.util.TextOutput;
 import com.google.gwt.resources.css.ast.Context;
 import com.google.gwt.resources.css.ast.CssDef;
@@ -78,14 +80,17 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private boolean needsComma;
   private boolean inUrl;
   private SortedSet<String> externalClassDefs;
+  private final TreeLogger treeLogger;
 
   public GssGenerationVisitor(TextOutput out, Map<String, String> defKeyMapping,
-      SortedSet<String> externalClassDefs, List<CssDef> constantNodes, boolean lenient) {
+      SortedSet<String> externalClassDefs, List<CssDef> constantNodes, boolean lenient,
+      TreeLogger treeLogger) {
     this.defKeyMapping = defKeyMapping;
     this.out = out;
     this.constantNodes = constantNodes;
     this.lenient = lenient;
     this.externalClassDefs = externalClassDefs;
+    this.treeLogger = treeLogger;
     newLine = true;
   }
 
@@ -251,8 +256,8 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
       try {
         new GssParser(new SourceCode(null, "body{" + cssProperty + "}")).parse();
       } catch (GssParserException e) {
-        System.err.println("[WARN] The following property is not valid and will be skipped: " +
-            cssProperty);
+        treeLogger.log(Type.WARN, "The following property is not valid and will be skipped: " +
+                 cssProperty);
         return false;
       }
     }
