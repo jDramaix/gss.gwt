@@ -120,7 +120,6 @@ import org.apache.commons.io.IOUtils;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -752,8 +751,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       IOUtils.write(concatenatedCss, fos);
       fos.close();
 
-      Css2Gss converter = new Css2Gss(tempFile.toURI().toURL(), new PrintWriter(System.out),
-          lenientConversion);
+      Css2Gss converter = new Css2Gss(tempFile.toURI().toURL(), logger, lenientConversion);
 
       return new ConversionResult(converter.toGss(), converter.getDefNameMapping());
 

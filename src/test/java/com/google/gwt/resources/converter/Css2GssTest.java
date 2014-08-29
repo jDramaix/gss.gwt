@@ -111,7 +111,7 @@ public class Css2GssTest {
       String expectedGssFile, boolean lenient) throws IOException, UnableToCompleteException {
     URL resource = Css2GssTest.class.getResource(inputCssFile);
     InputStream stream = Css2GssTest.class.getResourceAsStream(expectedGssFile);
-    String convertedGss = new Css2Gss(resource, new PrintWriter(System.err), lenient).toGss();
+    String convertedGss = new Css2Gss(resource, lenient).toGss();
     String gss = IOUtils.toString(stream, "UTF-8");
     Assert.assertEquals(gss, convertedGss);
   }

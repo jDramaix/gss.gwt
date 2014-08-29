@@ -19,6 +19,8 @@ package com.google.gwt.resources.converter;
 import com.google.common.base.Strings;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.resources.css.ast.Context;
 import com.google.gwt.resources.css.ast.CssDef;
 import com.google.gwt.resources.css.ast.CssEval;
@@ -44,9 +46,11 @@ public class DefCollectorVisitor extends CssVisitor {
   private final BiMap<String, String> defMapping;
   private final List<CssDef> constantNodes;
   private final boolean lenient;
+  private final TreeLogger treeLogger;
 
-  public DefCollectorVisitor(boolean lenient) {
+  public DefCollectorVisitor(boolean lenient, TreeLogger treeLogger) {
     this.lenient = lenient;
+    this.treeLogger = treeLogger;
     defMapping = HashBiMap.create();
     constantNodes = new LinkedList<CssDef>();
   }
@@ -83,9 +87,8 @@ public class DefCollectorVisitor extends CssVisitor {
 
       if (defMapping.containsValue(upperCaseName)) {
         if (lenient) {
-          System.err
-              .println("[WARN] Two constants have the same name [" + upperCaseName + "] after" +
-                  " conversion. The second constant will be renamed automatically.");
+          treeLogger.log(Type.WARN, "Two constants have the same name [" + upperCaseName + "] " +
+              "after conversion. The second constant will be renamed automatically.");
           upperCaseName = renameConstant(upperCaseName);
         } else {
           throw new Css2GssConversionException(
@@ -130,7 +133,7 @@ public class DefCollectorVisitor extends CssVisitor {
     String validName = INVALID_CHAR.matcher(output).replaceAll("_");
 
     if (validName.length() > output.length()) {
-      System.err.println("[WARN] Invalid characters detected in [" + camelCase + "]. They have " +
+      treeLogger.log(Type.WARN, "Invalid characters detected in [" + camelCase + "]. They have " +
           "been replaced [" + validName + "]");
     }
 

@@ -16,6 +16,8 @@
 package com.google.gwt.resources.converter;
 
 import com.google.common.collect.Sets;
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.resources.css.ast.Context;
 import com.google.gwt.resources.css.ast.CssProperty;
 import com.google.gwt.resources.css.ast.CssRule;
@@ -37,10 +39,13 @@ public class UndefinedConstantVisitor extends CssVisitor {
   private final Set<String> propertyNamesToSkip =
       Sets.newHashSet("filter", "-ms-filter", "font-family");
   private final boolean lenient;
+  private final TreeLogger treeLogger;
 
-  public UndefinedConstantVisitor(Set<String> gssContantNames, boolean lenient) {
+  public UndefinedConstantVisitor(Set<String> gssContantNames, boolean lenient,
+      TreeLogger treeLogger) {
     this.gssContantNames = gssContantNames;
     this.lenient = lenient;
+    this.treeLogger = treeLogger;
   }
 
   @Override
@@ -59,12 +64,11 @@ public class UndefinedConstantVisitor extends CssVisitor {
       while (matcher.find()) {
         String upperCaseString = matcher.group();
         if (!gssContantNames.contains(upperCaseString)) {
-          System.err.println("[WARN] Property '" + cssProperty.getName() + "' from rule '"
+          treeLogger.log(Type.WARN, "Property '" + cssProperty.getName() + "' from rule '"
               + x.getSelectors().toString() + "' uses an undefined constant: "
               + upperCaseString);
           if (lenient) {
-            System.err.println(
-                "[WARN] turning '" + upperCaseString +
+            treeLogger.log(Type.WARN, "turning '" + upperCaseString +
                     "' to lower case. This is probably not what you wanted here in the " +
                     "first place!");
             cssPropertyString =
