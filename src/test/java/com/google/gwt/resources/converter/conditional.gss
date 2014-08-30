@@ -62,3 +62,51 @@
     color: black;
   }
 }
+
+@if (is("property1", "desktop")) {
+  .foo3 {
+  }
+
+  @if (is("property2", "true")) {
+    .foo1 {
+    }
+  }
+  @else  {
+    .foo2 {
+    }
+  }
+}
+@elseif (is("property1", "blop")) {
+  .foo3 {
+  }
+}
+@elseif (is("property1", "blop2")) {
+
+  @if (is("property2", "true")) {
+    .foo4 {
+    }
+  }
+}
+@else  {
+
+  @if (is("property2", "true")) {
+    .foo4 {
+    }
+  }
+  @else  {
+    .foo5 {
+    }
+  }
+
+  .foo6 {
+  }
+
+  @if (is("property1", "tablet")) {
+    .foo7 {
+    }
+  }
+  @else  {
+    .foo8 {
+    }
+  }
+}

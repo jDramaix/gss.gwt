@@ -49,7 +49,7 @@ public class ElseNodeCreator extends ExtendedCssVisitor {
     List<CssNode> elseNodes = cssIf.getElseNodes();
     CssElse cssElse = null;
     for (CssNode child : elseNodes) {
-      if (child instanceof CssIf && cssElse == null) {
+      if (elseNodes.size() == 1 && child instanceof CssIf) {
         // @elsif at-rule case
         CssIf cssIfChild = (CssIf) child;
         CssElIf cssElIF = new CssElIf(cssIfChild);
