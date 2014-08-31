@@ -1,4 +1,11 @@
-@external externalClass, externalClass2, "unobfuscated*";
+@external externalClass, "unobfuscated*";
+
+@if (is("test.property", "true")) {
+  @external externalClass2;
+}
+@else {
+  @external obfuscatedClass;
+}
 
 .obfuscatedClass {
     width: 100%;

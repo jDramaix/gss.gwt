@@ -122,6 +122,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -274,6 +275,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     ConstantDefinitions constantDefinitions = optimize(extendedCssTree, context, true, true);
 
     checkErrors();
+
+    revertRenamingOfExternalClasses(extendedCssTree.tree, substitutionMap);
 
     SourceWriter sw = new StringSourceWriter();
     sw.println("new " + method.getReturnType().getQualifiedSourceName() + "() {");
@@ -505,10 +508,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     Map<String, Map<String, String>> replacementsWithPrefix = computeReplacements(method, logger,
         context);
 
-    Set<String> externalClasses = collectExternalClasses(cssTree);
-
     RenamingSubstitutionMap substitutionMap = new RenamingSubstitutionMap(replacementsWithPrefix,
-        externalClasses, isStrictResource(method), logger);
+        new HashSet<String>(), isStrictResource(method), logger);
 
     new CssClassRenaming(cssTree.getMutatingVisitController(), substitutionMap, null).runPass();
 
@@ -521,26 +522,47 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     mapping = Maps.newHashMap(Maps.filterKeys(mapping, Predicates.in(substitutionMap
         .getStyleClasses())));
 
-    // add external classes in the mapping
-    for (String external : externalClasses) {
-      mapping.put(external, external);
-    }
-
     return mapping;
   }
+
+  /**
+   * When the tree is fully processed, we can now collect the external classes and revert the
+   * renaming for these classes. We cannot collect the external classes during the original renaming
+   * because some external at-rule could inside a conditionnal block and could be removed when we
+   * evaluate these blocks
+   *
+   */
+  private void revertRenamingOfExternalClasses(CssTree cssTree, Map<String,
+      String> styleClassesMapping) {
+    ExternalClassesCollector externalClassesCollector = new ExternalClassesCollector(cssTree
+        .getMutatingVisitController(), styleClassesMapping.keySet());
+
+    externalClassesCollector.runPass();
+
+    Collection<String> externalClasses = externalClassesCollector.getExternalClassNames();
+
+    final Map<String, String> revertMap = new HashMap<String, String>(externalClasses.size());
+
+    for (String external : externalClasses) {
+      revertMap.put(styleClassesMapping.get(external), external);
+      // override the mapping
+      styleClassesMapping.put(external, external);
+    }
+
+    SubstitutionMap revertExternalClasses = new SubstitutionMap() {
+      @Override
+      public String get(String key) {
+        return revertMap.get(key);
+      }
+    };
+
+    new CssClassRenaming(cssTree.getMutatingVisitController(), revertExternalClasses, null).runPass();
+  }
+
 
   private boolean isStrictResource(JMethod method) {
     NotStrict notStrict = method.getAnnotation(NotStrict.class);
     return notStrict == null;
-  }
-
-  private Set<String> collectExternalClasses(CssTree cssTree) {
-    ExternalClassesCollector externalClassesCollector = new ExternalClassesCollector(cssTree
-        .getMutatingVisitController());
-
-    externalClassesCollector.runPass();
-
-    return externalClassesCollector.getExternalClassNames();
   }
 
   private List<String> finalizeTree(CssTree cssTree) throws UnableToCompleteException {

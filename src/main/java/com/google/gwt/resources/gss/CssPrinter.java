@@ -22,6 +22,7 @@ import com.google.common.css.compiler.ast.CssConditionalRuleNode;
 import com.google.common.css.compiler.ast.CssNode;
 import com.google.common.css.compiler.ast.CssRootNode;
 import com.google.common.css.compiler.ast.CssTree;
+import com.google.common.css.compiler.ast.CssUnknownAtRuleNode;
 import com.google.common.css.compiler.ast.CssValueNode;
 import com.google.common.css.compiler.passes.CompactPrinter;
 import com.google.gwt.core.ext.Generator;
@@ -41,6 +42,7 @@ public class CssPrinter extends CompactPrinter {
   private static final String CONTATENATION = " + ";
   private static final String LEFT_BRACKET = "(";
   private static final String RIGHT_BRACKET = ")";
+  private static final String EXTERNAL = "external";
 
   private StringBuilder masterStringBuilder;
   private String css;
@@ -133,6 +135,15 @@ public class CssPrinter extends CompactPrinter {
     if (node.getType() != Type.ELSE) {
       masterStringBuilder.append(" : ");
     }
+  }
+
+  @Override
+  public boolean enterUnknownAtRule(CssUnknownAtRuleNode node) {
+    if (EXTERNAL.equals(node.getName())) {
+      // Don't print external at-rule
+      return false;
+    }
+    return super.enterUnknownAtRule(node);
   }
 
   @Override

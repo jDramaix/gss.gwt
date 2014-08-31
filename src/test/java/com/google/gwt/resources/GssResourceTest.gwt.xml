@@ -12,4 +12,8 @@
                                  value="progid:DXImageTransform.Microsoft.gradient" />
 
   <set-configuration-property name="CssResource.obfuscationPrefix" value="" />
+
+  <!-- Define a configuration property to test some if-else nodes -->
+  <define-configuration-property name="test.property" is-multi-valued="false" />
+  <set-configuration-property name="test.property" value="true" />
 </module>

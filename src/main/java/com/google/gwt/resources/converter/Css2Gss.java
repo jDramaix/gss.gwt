@@ -70,13 +70,13 @@ public class Css2Gss {
 
       ExternalClassesCollector externalClassesCollector = new ExternalClassesCollector();
       externalClassesCollector.accept(sheet);
-      SortedSet<String> classes = externalClassesCollector.getClasses();
-      removeWrongEntries(classes);
-      removeWrongEscaping(classes);
-      removePseudoClasses(classes, lenient);
+      SortedSet<String> validExternalClasses = externalClassesCollector.getClasses();
+      removeWrongEntries(validExternalClasses);
+      removePseudoClasses(validExternalClasses, lenient);
 
       new UndefinedConstantVisitor(new HashSet<String>(defNameMapping.values()),
           lenient, treeLogger).accept(sheet);
+
       new ElseNodeCreator().accept(sheet);
 
       new AlternateAnnotationCreatorVisitor().accept(sheet);
@@ -84,7 +84,7 @@ public class Css2Gss {
       new FontFamilyVisitor().accept(sheet);
 
       GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(
-          new DefaultTextOutput(false), defCollectorVisitor.getDefMapping(), classes,
+          new DefaultTextOutput(false), defCollectorVisitor.getDefMapping(), validExternalClasses,
           defCollectorVisitor.getConstantNodes(), lenient, treeLogger);
       gssGenerationVisitor.accept(sheet);
 
@@ -114,20 +114,6 @@ public class Css2Gss {
       }
     }
     classes.removeAll(toRemove);
-  }
-
-  private void removeWrongEscaping(SortedSet<String> classes) {
-    Set<String> toRemove = new HashSet<String>();
-    Set<String> toAdd = new HashSet<String>();
-
-    for (String clazzName : classes) {
-      if (clazzName.contains("\\-")) {
-        toRemove.add(clazzName);
-        toAdd.add(clazzName.replace("\\-", "-"));
-      }
-    }
-    classes.removeAll(toRemove);
-    classes.addAll(toAdd);
   }
 
   private void removeWrongEntries(SortedSet<String> classes) {

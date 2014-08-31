@@ -1,4 +1,3 @@
-@external appFooter-appPanel appFooter-linksPanelWithApps bar baz foo panel;
 @media (max-width:767px) {
 
   .appFooter-appPanel {
@@ -26,15 +25,22 @@
 }
 
 @if (is("user.agent", "safari")) {
+  @external foo;
   .foo {
   }
 
   @if (is("locale", "en")) {
+    @external bar;
     .bar {
     }
   }
   @else  {
+    @external baz;
     .baz {
     }
   }
 }
+@external foo;
+@external appFooter-appPanel;
+@external appFooter-linksPanelWithApps;
+@external panel;
