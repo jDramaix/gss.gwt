@@ -23,7 +23,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.net.URL;
 
 /**
@@ -50,11 +49,6 @@ public class Css2GssTest {
   @Test
   public void testLenientFlag() throws Exception {
     assertFileContentEqualsAfterConversion("badRule.css", "badRule.gss", true);
-  }
-
-  @Test
-  public void testExternalMissingComma() throws Exception {
-    assertFileContentEqualsAfterConversion("external-bug.css", "external-bug.gss", true);
   }
 
   @Test

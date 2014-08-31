@@ -41,3 +41,6 @@
 }
 
 @external foo foo:after;
+@external .dragdrop-proxy;
+@external .dragdrop-selected
+@external .dragdrop-movable-panel;

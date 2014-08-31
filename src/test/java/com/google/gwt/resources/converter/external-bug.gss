@@ -41,6 +41,8 @@
   }
 }
 @external foo;
+@external dragdrop-proxy;
+@external dragdrop-selected dragdrop-movable-panel;
 @external appFooter-appPanel;
 @external appFooter-linksPanelWithApps;
 @external panel;

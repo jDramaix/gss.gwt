@@ -71,7 +71,6 @@ public class Css2Gss {
       ExternalClassesCollector externalClassesCollector = new ExternalClassesCollector();
       externalClassesCollector.accept(sheet);
       SortedSet<String> validExternalClasses = externalClassesCollector.getClasses();
-      removeWrongEntries(validExternalClasses);
       removePseudoClasses(validExternalClasses, lenient);
 
       new UndefinedConstantVisitor(new HashSet<String>(defNameMapping.values()),
@@ -114,23 +113,6 @@ public class Css2Gss {
       }
     }
     classes.removeAll(toRemove);
-  }
-
-  private void removeWrongEntries(SortedSet<String> classes) {
-    Set<String> toRemove = new HashSet<String>();
-    Set<String> toAdd = new HashSet<String>();
-    for (String entry : classes) {
-      if(entry.contains("@external")){
-        toRemove.add(entry);
-        entry = entry.replace("@external", "");
-        entry = entry.replace(",", "");
-        entry = entry.replace("\n", "");
-        entry = entry.replace("\r", "");
-        toAdd.add(entry);
-      }
-    }
-    classes.removeAll(toRemove);
-    classes.addAll(toAdd);
   }
 
   public static void main(String... args) {

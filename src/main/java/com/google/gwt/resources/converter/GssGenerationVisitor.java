@@ -68,6 +68,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private static final String EXTERNAL = "@external";
   private static final String IMPORTANT = " !important";
   private static final Pattern UNESCAPE = Pattern.compile("\\\\");
+  private static final Pattern UNESCAPE_EXTERNAL = Pattern.compile("\\\\|@external|,|\\n|\\r");
 
 
   private final Map<String, String> defKeyMapping;
@@ -244,7 +245,8 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private void printExternal(CssExternalSelectors x) {
     boolean first = true;
     for (String selector : x.getClasses()) {
-      if (validExternalClassDefs.contains(selector)) {
+      String unescaped = unescapeExternalClass(selector);
+      if (validExternalClassDefs.contains(selector) && !Strings.isNullOrEmpty(unescaped)) {
         if (first) {
           out.print(EXTERNAL);
           first = false;
@@ -258,7 +260,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
           out.print("'");
         }
 
-        out.printOpt(unescape(selector));
+        out.printOpt(unescaped);
 
         if (needQuote) {
           out.print("'");
@@ -269,6 +271,11 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     if (!first) {
       semiColon();
     }
+  }
+
+  private boolean isValidExternalClass(String styleClass) {
+
+    return false;
   }
 
   @Override
@@ -565,5 +572,9 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   private String unescape(String toEscape) {
     return UNESCAPE.matcher(toEscape).replaceAll("");
+  }
+
+  private String unescapeExternalClass(String external) {
+    return UNESCAPE_EXTERNAL.matcher(external).replaceAll("");
   }
 }
