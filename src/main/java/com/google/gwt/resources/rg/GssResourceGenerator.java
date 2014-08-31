@@ -528,8 +528,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
   /**
    * When the tree is fully processed, we can now collect the external classes and revert the
    * renaming for these classes. We cannot collect the external classes during the original renaming
-   * because some external at-rule could inside a conditionnal block and could be removed when we
-   * evaluate these blocks
+   * because some external at-rule could be located inside a conditional block and could be
+   * removed when these blocks are evaluated.
    *
    */
   private void revertRenamingOfExternalClasses(CssTree cssTree, Map<String,
