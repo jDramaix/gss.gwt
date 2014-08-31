@@ -60,3 +60,49 @@
         color: black;
     }
 }
+
+@if property1 desktop {
+  .foo3 {
+  }
+
+  @if property2 true {
+    .foo1 {
+    }
+  }
+  @else {
+    .foo2 {
+    }
+  }
+}
+@elif  property1 blop {
+  .foo3 {
+  }
+}
+@elif  property1 blop2 {
+  @if property2 true {
+    .foo4 {
+    }
+  }
+}
+@else {
+  @if property2 true {
+    .foo4 {
+    }
+  }
+  @else {
+    .foo5 {
+    }
+  }
+
+  .foo6 {
+  }
+
+  @if property1 tablet {
+    .foo7 {
+    }
+  }
+  @else {
+    .foo8 {
+    }
+  }
+}
