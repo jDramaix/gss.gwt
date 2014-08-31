@@ -20,7 +20,6 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.util.DefaultTextOutput;
 import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
-import com.google.gwt.resources.css.ExternalClassesCollector;
 import com.google.gwt.resources.css.GenerateCssAst;
 import com.google.gwt.resources.css.ast.CssStylesheet;
 
@@ -30,8 +29,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
 
 /**
  * Converter from Css to Gss
@@ -68,11 +65,6 @@ public class Css2Gss {
       defCollectorVisitor.accept(sheet);
       defNameMapping = defCollectorVisitor.getDefMapping();
 
-      ExternalClassesCollector externalClassesCollector = new ExternalClassesCollector();
-      externalClassesCollector.accept(sheet);
-      SortedSet<String> validExternalClasses = externalClassesCollector.getClasses();
-      removePseudoClasses(validExternalClasses, lenient);
-
       new UndefinedConstantVisitor(new HashSet<String>(defNameMapping.values()),
           lenient, treeLogger).accept(sheet);
 
@@ -83,7 +75,7 @@ public class Css2Gss {
       new FontFamilyVisitor().accept(sheet);
 
       GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(
-          new DefaultTextOutput(false), defCollectorVisitor.getDefMapping(), validExternalClasses,
+          new DefaultTextOutput(false), defCollectorVisitor.getDefMapping(),
           defCollectorVisitor.getConstantNodes(), lenient, treeLogger);
       gssGenerationVisitor.accept(sheet);
 
@@ -97,22 +89,6 @@ public class Css2Gss {
    */
   public Map<String, String> getDefNameMapping() {
     return defNameMapping;
-  }
-
-  private void removePseudoClasses(SortedSet<String> classes, boolean lenient) {
-    Set<String> toRemove = new HashSet<String>();
-
-    for (String clazzName : classes) {
-      if (clazzName.contains(":")) {
-        if (lenient) {
-          toRemove.add(clazzName);
-        } else {
-          throw new Css2GssConversionException(
-              "One of your external statements contains a pseudo class: " + clazzName);
-        }
-      }
-    }
-    classes.removeAll(toRemove);
   }
 
   public static void main(String... args) {

@@ -47,7 +47,6 @@ import com.google.gwt.resources.css.ast.CssUrl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
 import java.util.regex.Pattern;
 
 public class GssGenerationVisitor extends ExtendedCssVisitor {
@@ -86,16 +85,14 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private boolean inMedia;
   private boolean inPageRule;
   private boolean inFontFace;
-  private SortedSet<String> validExternalClassDefs;
 
   public GssGenerationVisitor(TextOutput out, Map<String, String> defKeyMapping,
-      SortedSet<String> validExternalClassDefs, List<CssDef> constantNodes, boolean lenient,
+      List<CssDef> constantNodes, boolean lenient,
       TreeLogger treeLogger) {
     this.defKeyMapping = defKeyMapping;
     this.out = out;
     this.constantNodes = constantNodes;
     this.lenient = lenient;
-    this.validExternalClassDefs = validExternalClassDefs;
     this.treeLogger = treeLogger;
     newLine = true;
     wrongExternalNodes = new ArrayList<CssExternalSelectors>();
@@ -246,7 +243,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     boolean first = true;
     for (String selector : x.getClasses()) {
       String unescaped = unescapeExternalClass(selector);
-      if (validExternalClassDefs.contains(selector) && !Strings.isNullOrEmpty(unescaped)) {
+      if (validateExternalClass(selector) && !Strings.isNullOrEmpty(unescaped)) {
         if (first) {
           out.print(EXTERNAL);
           first = false;
@@ -273,10 +270,19 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     }
   }
 
-  private boolean isValidExternalClass(String styleClass) {
-
-    return false;
+  private boolean validateExternalClass(String selector) {
+    if (selector.contains(":")) {
+      if (lenient) {
+        treeLogger.log(Type.WARN, "This invalid external selector will be skipped: "+ selector);
+        return false;
+      } else {
+        throw new Css2GssConversionException(
+            "One of your external statements contains a pseudo class: " + selector);
+      }
+    }
+    return true;
   }
+
 
   @Override
   public void endVisit(CssNoFlip x, Context ctx) {
