@@ -317,7 +317,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       allowLegacy = "true".equals(propertyOracle.getConfigurationProperty(KEY_LEGACY).getValues()
           .get(0));
 
-      // enable lenient conversion wwhen legacy mode is enabled
+      // enable lenient conversion when legacy mode is enabled
       lenientConversion = allowLegacy && "lenient".equals(propertyOracle
           .getConfigurationProperty(KEY_CONVERSION_MODE).getValues().get(0));
 
