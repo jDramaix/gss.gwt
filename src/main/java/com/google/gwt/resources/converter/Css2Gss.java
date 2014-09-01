@@ -41,7 +41,7 @@ public class Css2Gss {
   private Map<String, String> defNameMapping;
 
   public Css2Gss(String filePath) throws MalformedURLException {
-    this(new File(filePath).toURI().toURL(), true);
+    this(new File(filePath).toURI().toURL(), false);
   }
 
   public Css2Gss(URL fileUrl, TreeLogger treeLogger) {
