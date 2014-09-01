@@ -139,7 +139,7 @@ public class CssPrinter extends CompactPrinter {
 
   @Override
   public boolean enterUnknownAtRule(CssUnknownAtRuleNode node) {
-    if (EXTERNAL.equals(node.getName())) {
+    if (EXTERNAL.equals(node.getName().getValue())) {
       // Don't print external at-rule
       return false;
     }

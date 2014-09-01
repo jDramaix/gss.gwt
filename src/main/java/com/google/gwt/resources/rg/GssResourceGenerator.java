@@ -103,7 +103,7 @@ import com.google.gwt.resources.ext.ResourceGeneratorUtil;
 import com.google.gwt.resources.ext.SupportsGeneratorResultCaching;
 import com.google.gwt.resources.gss.CreateRuntimeConditionalNodes;
 import com.google.gwt.resources.gss.CssPrinter;
-import com.google.gwt.resources.gss.DisallowDefInsideRuntimeConditionalNode;
+import com.google.gwt.resources.gss.ValidateRuntimeConditionalNode;
 import com.google.gwt.resources.gss.ExtendedEliminateConditionalNodes;
 import com.google.gwt.resources.gss.ExternalClassesCollector;
 import com.google.gwt.resources.gss.GwtGssFunctionMapProvider;
@@ -621,8 +621,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
         getPermutationsConditions(context, extendedCssTree.permutationAxes),
         runtimeConditionalNodeCollector.getRuntimeConditionalNodes()).runPass();
 
-    new DisallowDefInsideRuntimeConditionalNode(cssTree.getVisitController(),
-        errorManager).runPass();
+    new ValidateRuntimeConditionalNode(cssTree.getVisitController(),errorManager).runPass();
 
     // Don't continue if errors exist
     checkErrors();
