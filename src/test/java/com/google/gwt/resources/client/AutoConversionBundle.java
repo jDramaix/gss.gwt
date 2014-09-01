@@ -24,5 +24,23 @@ public interface AutoConversionBundle extends ClientBundle {
     int gecko1_8();
   }
 
+  interface ConstantConditional extends GssResource {
+    String foo();
+    String color();
+    int width();
+    int height();
+  }
+
+  interface LenientExternal extends GssResource {
+    String nonObfuscated();
+    String nonObfuscated2();
+    String nonObfuscated3();
+    String obfuscated();
+  }
+
   ConstantRenaming constantRenaming();
+
+  ConstantConditional constantConditional();
+
+  LenientExternal lenientExternal();
 }

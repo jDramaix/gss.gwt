@@ -316,7 +316,9 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
       allowLegacy = "true".equals(propertyOracle.getConfigurationProperty(KEY_LEGACY).getValues()
           .get(0));
-      lenientConversion = "lenient".equals(propertyOracle
+
+      // enable lenient conversion wwhen legacy mode is enabled
+      lenientConversion = allowLegacy && "lenient".equals(propertyOracle
           .getConfigurationProperty(KEY_CONVERSION_MODE).getValues().get(0));
 
       ClientBundleRequirements requirements = context.getRequirements();
@@ -621,7 +623,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
         getPermutationsConditions(context, extendedCssTree.permutationAxes),
         runtimeConditionalNodeCollector.getRuntimeConditionalNodes()).runPass();
 
-    new ValidateRuntimeConditionalNode(cssTree.getVisitController(),errorManager).runPass();
+    new ValidateRuntimeConditionalNode(cssTree.getVisitController(), errorManager,
+        lenientConversion).runPass();
 
     // Don't continue if errors exist
     checkErrors();

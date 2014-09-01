@@ -72,10 +72,10 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   private final Map<String, String> defKeyMapping;
   private final TextOutput out;
-  private final List<CssDef> constantNodes;
   private final boolean lenient;
   private final TreeLogger treeLogger;
   private final List<CssExternalSelectors> wrongExternalNodes;
+  private final List<CssDef> wrongDefNodes;
 
   private boolean noFlip;
   private boolean newLine;
@@ -83,19 +83,16 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private boolean needsComma;
   private boolean inUrl;
   private boolean inMedia;
-  private boolean inPageRule;
-  private boolean inFontFace;
 
-  public GssGenerationVisitor(TextOutput out, Map<String, String> defKeyMapping,
-      List<CssDef> constantNodes, boolean lenient,
+  public GssGenerationVisitor(TextOutput out, Map<String, String> defKeyMapping, boolean lenient,
       TreeLogger treeLogger) {
     this.defKeyMapping = defKeyMapping;
     this.out = out;
-    this.constantNodes = constantNodes;
     this.lenient = lenient;
     this.treeLogger = treeLogger;
     newLine = true;
     wrongExternalNodes = new ArrayList<CssExternalSelectors>();
+    wrongDefNodes = new ArrayList<CssDef>();
   }
 
   public String getContent() {
@@ -105,8 +102,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   @Override
   public void endVisit(CssFontFace x, Context ctx) {
     closeBrace();
-
-    inFontFace = false;
   }
 
 
@@ -117,6 +112,9 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     out.newlineOpt();
 
     inMedia = false;
+
+    maybePrintWrongExternalNodes();
+    maybePrintWrongDefNodes(ctx);
   }
 
   @Override
@@ -124,8 +122,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     out.indentOut();
     out.print("}");
     out.newlineOpt();
-
-    inPageRule = false;
   }
 
   @Override
@@ -138,42 +134,10 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     return false;
   }
 
-  @Override
-  public boolean visit(CssStylesheet x, Context ctx) {
-    printConstantNodes();
-
-    return true;
-  }
-
-
-  private void printConstantNodes() {
-
-    for (CssDef node : constantNodes) {
-      if (node instanceof CssUrl) {
-        inUrl = true;
-        printDef(node, URL, "url");
-        inUrl = false;
-      } else if (node instanceof CssEval) {
-        printDef(node, EVAL, "eval");
-      } else {
-        printDef(node, null, "def");
-      }
-    }
-
-    if (!constantNodes.isEmpty()) {
-      out.newlineOpt();
-    }
-  }
 
   @Override
   public void endVisit(CssStylesheet x, Context ctx) {
-    if (!lenient) {
-      return;
-    }
-
-    for (CssExternalSelectors external : wrongExternalNodes) {
-      printExternal(external);
-    }
+    maybePrintWrongExternalNodes();
   }
 
   @Override
@@ -190,6 +154,30 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
     closeBrace();
   }
+
+  @Override
+  public boolean visit(CssDef x, Context ctx) {
+    printDef(x, null, "def");
+
+    return false;
+  }
+
+  @Override
+  public boolean visit(CssEval x, Context ctx) {
+    printDef(x, EVAL, "eval");
+
+    return false;
+  }
+
+  @Override
+  public boolean visit(CssUrl x, Context ctx) {
+    inUrl = true;
+    printDef(x, URL, "url");
+    inUrl = false;
+
+    return false;
+  }
+
 
   @Override
   public boolean visit(CssRule x, Context ctx) {
@@ -222,21 +210,47 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssExternalSelectors x, Context ctx) {
-    if (inFontFace || inMedia || inPageRule) {
+    if (inMedia) {
       if (lenient) {
-        treeLogger.log(Type.WARN, "An external at-rule is not allowed inside a media," +
-            " font-face or page rule at-rule. The following external at-rule [" + x + "] will be " +
-            "moved in the main scope");
+        treeLogger.log(Type.WARN, "An external at-rule is not allowed inside a @media at-rule. " +
+            "The following external at-rule [" + x + "] will be moved in the upper scope");
         wrongExternalNodes.add(x);
       } else {
-        treeLogger.log(Type.ERROR, "An external at-rule is not allowed inside a media," +
-            " font-face or page rule at-rule.");
+        treeLogger.log(Type.ERROR, "An external at-rule is not allowed inside a @media at-rule. ");
       }
     } else {
       printExternal(x);
     }
 
     return false;
+  }
+
+  private void maybePrintWrongExternalNodes() {
+    if (!lenient) {
+      return;
+    }
+
+    for (CssExternalSelectors external : wrongExternalNodes) {
+      printExternal(external);
+    }
+    wrongExternalNodes.clear();
+  }
+
+  private void maybePrintWrongDefNodes(Context ctx) {
+    if (!lenient) {
+      return;
+    }
+
+    for (CssDef def : wrongDefNodes) {
+      if (def instanceof CssUrl) {
+        visit((CssUrl) def, ctx);
+      } else if (def instanceof CssEval) {
+        visit((CssEval) def, ctx);
+      } else {
+        visit(def, ctx);
+      }
+    }
+    wrongDefNodes.clear();
   }
 
   private void printExternal(CssExternalSelectors x) {
@@ -273,7 +287,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private boolean validateExternalClass(String selector) {
     if (selector.contains(":")) {
       if (lenient) {
-        treeLogger.log(Type.WARN, "This invalid external selector will be skipped: "+ selector);
+        treeLogger.log(Type.WARN, "This invalid external selector will be skipped: " + selector);
         return false;
       } else {
         throw new Css2GssConversionException(
@@ -318,7 +332,7 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
         new GssParser(new SourceCode(null, "body{" + cssProperty + "}")).parse();
       } catch (GssParserException e) {
         treeLogger.log(Type.WARN, "The following property is not valid and will be skipped: " +
-                 cssProperty);
+            cssProperty);
         return false;
       }
     }
@@ -398,8 +412,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssFontFace x, Context ctx) {
-    inFontFace = true;
-
     out.print("@font-face");
     openBrace();
     return true;
@@ -429,8 +441,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssPageRule x, Context ctx) {
-    inPageRule = true;
-
     out.print("@page");
     if (x.getPseudoPage() != null) {
       out.print(" :");
@@ -462,26 +472,42 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   }
 
   private void printDef(CssDef def, String valueTemplate, String atRule) {
-    out.print(DEF);
+    if (validateDefNode(def, atRule)) {
+      out.print(DEF);
 
-    String name = defKeyMapping.get(def.getKey());
+      String name = defKeyMapping.get(def.getKey());
 
-    if (name == null) {
-      throw new Css2GssConversionException("unknown @" + atRule + " rule [" + def.getKey() + "]");
+      if (name == null) {
+        throw new Css2GssConversionException("unknown @" + atRule + " rule [" + def.getKey() + "]");
+      }
+
+      out.print(name);
+      out.print(' ');
+
+      String values = printValuesList(def.getValues());
+
+      if (valueTemplate != null) {
+        out.print(format(valueTemplate, values));
+      } else {
+        out.print(values);
+      }
+
+      semiColon();
     }
+  }
 
-    out.print(name);
-    out.print(' ');
-
-    String values = printValuesList(def.getValues());
-
-    if (valueTemplate != null) {
-      out.print(format(valueTemplate, values));
-    } else {
-      out.print(values);
+  private boolean validateDefNode(CssDef def, String atRule) {
+    if (inMedia) {
+      if (lenient) {
+        treeLogger.log(Type.WARN, "A " + atRule + " is not allowed inside a @media at-rule." +
+            "The following " + atRule + " [" + def + "] will be moved in the upper scope");
+        wrongDefNodes.add(def);
+        return false;
+      } else {
+        treeLogger.log(Type.ERROR, "A " + atRule + " is not allowed inside a @media at-rule.");
+      }
     }
-
-    semiColon();
+    return true;
   }
 
   private void closeBrace() {
