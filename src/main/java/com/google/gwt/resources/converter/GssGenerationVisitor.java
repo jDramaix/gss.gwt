@@ -40,7 +40,6 @@ import com.google.gwt.resources.css.ast.CssProperty.Value;
 import com.google.gwt.resources.css.ast.CssRule;
 import com.google.gwt.resources.css.ast.CssSelector;
 import com.google.gwt.resources.css.ast.CssSprite;
-import com.google.gwt.resources.css.ast.CssStylesheet;
 import com.google.gwt.resources.css.ast.CssUnknownAtRule;
 import com.google.gwt.resources.css.ast.CssUrl;
 
@@ -132,12 +131,6 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   @Override
   public boolean visit(CssSprite x, Context ctx) {
     return false;
-  }
-
-
-  @Override
-  public void endVisit(CssStylesheet x, Context ctx) {
-    maybePrintWrongExternalNodes();
   }
 
   @Override
