@@ -509,7 +509,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
         context);
 
     RenamingSubstitutionMap substitutionMap = new RenamingSubstitutionMap(replacementsWithPrefix,
-        new HashSet<String>(), isStrictResource(method), logger);
+        isStrictResource(method), logger);
 
     new CssClassRenaming(cssTree.getMutatingVisitController(), substitutionMap, null).runPass();
 
