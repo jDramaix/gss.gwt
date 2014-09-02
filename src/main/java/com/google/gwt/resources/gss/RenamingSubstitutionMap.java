@@ -17,8 +17,6 @@
 package com.google.gwt.resources.gss;
 
 import com.google.common.css.SubstitutionMap;
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.TreeLogger.Type;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,19 +36,15 @@ import java.util.Set;
  */
 public class RenamingSubstitutionMap implements SubstitutionMap {
   private final Map<String, String> replacementMap;
-  private final boolean isStrict;
-  private final TreeLogger logger;
 
-  private boolean hasError;
   private Set<String> classes;
+  private Set<String> externalClassCandidates;
 
-  public RenamingSubstitutionMap(Map<String, Map<String, String>> replacementsWithPrefix,
-      boolean isStrict, TreeLogger logger) {
-    this.isStrict = isStrict;
-    this.logger = logger;
+  public RenamingSubstitutionMap(Map<String, Map<String, String>> replacementsWithPrefix) {
     this.replacementMap = computeReplacementMap(replacementsWithPrefix);
 
     classes = new HashSet<String>();
+    externalClassCandidates = new HashSet<String>();
   }
 
   private Map<String, String> computeReplacementMap(
@@ -79,22 +73,19 @@ public class RenamingSubstitutionMap implements SubstitutionMap {
     String replacement = replacementMap.get(key);
 
     if (replacement == null) {
-      if (isStrict) {
-        logger.log(Type.ERROR, "The following non-obfuscated class is present in a strict " +
-            "CssResource: " + key);
-        hasError = true;
-      }
+      // could be an external style class
+      externalClassCandidates.add(key);
       return key;
     }
 
     return replacement;
   }
 
-  public boolean hasError() {
-    return hasError;
-  }
-
   public Set<String> getStyleClasses() {
     return classes;
+  }
+
+  public Set<String> getExternalClassCandidates() {
+    return externalClassCandidates;
   }
 }
