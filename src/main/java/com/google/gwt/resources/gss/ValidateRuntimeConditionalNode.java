@@ -19,6 +19,7 @@ package com.google.gwt.resources.gss;
 import com.google.common.css.compiler.ast.CssCompilerPass;
 import com.google.common.css.compiler.ast.CssConditionalRuleNode;
 import com.google.common.css.compiler.ast.CssDefinitionNode;
+import com.google.common.css.compiler.ast.CssUnknownAtRuleNode;
 import com.google.common.css.compiler.ast.DefaultTreeVisitor;
 import com.google.common.css.compiler.ast.ErrorManager;
 import com.google.common.css.compiler.ast.GssError;
@@ -26,7 +27,7 @@ import com.google.common.css.compiler.ast.VisitController;
 
 import java.util.Stack;
 
-public class DisallowDefInsideRuntimeConditionalNode extends DefaultTreeVisitor implements
+public class ValidateRuntimeConditionalNode extends DefaultTreeVisitor implements
     CssCompilerPass {
 
   private final VisitController visitController;
@@ -34,7 +35,7 @@ public class DisallowDefInsideRuntimeConditionalNode extends DefaultTreeVisitor 
 
   private Stack<CssConditionalRuleNode> cssConditionalRuleNodes;
 
-  public DisallowDefInsideRuntimeConditionalNode(VisitController visitController,
+  public ValidateRuntimeConditionalNode(VisitController visitController,
       ErrorManager errorManager) {
     this.visitController = visitController;
     this.errorManager = errorManager;
@@ -47,6 +48,15 @@ public class DisallowDefInsideRuntimeConditionalNode extends DefaultTreeVisitor 
           "that will be evaluated at runtime.", node.getSourceCodeLocation()));
     }
     return false;
+  }
+
+  @Override
+  public boolean enterUnknownAtRule(CssUnknownAtRuleNode node) {
+    if (inConditionalRule() && "external".equals(node.getName().getValue())) {
+      errorManager.report(new GssError("You cannot define a external at-rule inside a " +
+          "ConditionalNode that will be evaluated at runtime.", node.getSourceCodeLocation()));
+    }
+    return super.enterUnknownAtRule(node);
   }
 
   @Override

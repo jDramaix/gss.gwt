@@ -20,7 +20,6 @@ import com.google.common.css.SubstitutionMap;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -46,16 +45,16 @@ public class RenamingSubstitutionMap implements SubstitutionMap {
   private Set<String> classes;
 
   public RenamingSubstitutionMap(Map<String, Map<String, String>> replacementsWithPrefix,
-      Collection<String> externalClasses, boolean isStrict, TreeLogger logger) {
+      boolean isStrict, TreeLogger logger) {
     this.isStrict = isStrict;
     this.logger = logger;
-    this.replacementMap = computeReplacementMap(replacementsWithPrefix, externalClasses);
+    this.replacementMap = computeReplacementMap(replacementsWithPrefix);
 
     classes = new HashSet<String>();
   }
 
   private Map<String, String> computeReplacementMap(
-      Map<String, Map<String, String>> replacementsWithPrefix, Collection<String> externalClasses) {
+      Map<String, Map<String, String>> replacementsWithPrefix) {
 
     Map<String, String> result = new HashMap<String, String>();
 
@@ -68,11 +67,6 @@ public class RenamingSubstitutionMap implements SubstitutionMap {
       }
 
       result.putAll(replacement);
-    }
-
-    // override mapping for external classes
-    for (String external : externalClasses) {
-      result.put(external, external);
     }
 
     return result;

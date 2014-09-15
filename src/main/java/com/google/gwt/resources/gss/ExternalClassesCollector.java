@@ -16,7 +16,6 @@
 
 package com.google.gwt.resources.gss;
 
-import com.google.common.css.compiler.ast.CssClassSelectorNode;
 import com.google.common.css.compiler.ast.CssCompilerPass;
 import com.google.common.css.compiler.ast.CssCompositeValueNode;
 import com.google.common.css.compiler.ast.CssStringNode;
@@ -43,15 +42,18 @@ public class ExternalClassesCollector extends DefaultTreeVisitor implements CssC
   private List<String> externalClassPrefixes;
   private boolean matchAll;
 
-  public ExternalClassesCollector(MutatingVisitController visitController) {
+
+
+  public ExternalClassesCollector(MutatingVisitController visitController,
+      Set<String> styleClasses) {
     this.visitController = visitController;
+    classNames = new TreeSet<String>(styleClasses);
   }
 
   @Override
   public void runPass() {
     externalClassNames = new HashSet<String>();
     externalClassPrefixes = new ArrayList<String>();
-    classNames = new TreeSet<String>();
 
     visitController.startVisit(this);
   }
@@ -64,11 +66,6 @@ public class ExternalClassesCollector extends DefaultTreeVisitor implements CssC
       }
       visitController.removeCurrentNode();
     }
-  }
-
-  @Override
-  public void leaveClassSelector(CssClassSelectorNode classSelector) {
-    classNames.add(classSelector.getRefinerName());
   }
 
   public Set<String> getExternalClassNames() {

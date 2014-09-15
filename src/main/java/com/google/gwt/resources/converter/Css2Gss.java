@@ -20,7 +20,6 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.util.DefaultTextOutput;
 import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
-import com.google.gwt.resources.css.ExternalClassesCollector;
 import com.google.gwt.resources.css.GenerateCssAst;
 import com.google.gwt.resources.css.ast.CssStylesheet;
 
@@ -30,8 +29,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
 
 /**
  * Converter from Css to Gss
@@ -68,15 +65,9 @@ public class Css2Gss {
       defCollectorVisitor.accept(sheet);
       defNameMapping = defCollectorVisitor.getDefMapping();
 
-      ExternalClassesCollector externalClassesCollector = new ExternalClassesCollector();
-      externalClassesCollector.accept(sheet);
-      SortedSet<String> classes = externalClassesCollector.getClasses();
-      removeWrongEntries(classes);
-      removeWrongEscaping(classes);
-      removePseudoClasses(classes, lenient);
-
       new UndefinedConstantVisitor(new HashSet<String>(defNameMapping.values()),
           lenient, treeLogger).accept(sheet);
+
       new ElseNodeCreator().accept(sheet);
 
       new AlternateAnnotationCreatorVisitor().accept(sheet);
@@ -84,7 +75,7 @@ public class Css2Gss {
       new FontFamilyVisitor().accept(sheet);
 
       GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(
-          new DefaultTextOutput(false), defCollectorVisitor.getDefMapping(), classes,
+          new DefaultTextOutput(false), defNameMapping,
           defCollectorVisitor.getConstantNodes(), lenient, treeLogger);
       gssGenerationVisitor.accept(sheet);
 
@@ -98,53 +89,6 @@ public class Css2Gss {
    */
   public Map<String, String> getDefNameMapping() {
     return defNameMapping;
-  }
-
-  private void removePseudoClasses(SortedSet<String> classes, boolean lenient) {
-    Set<String> toRemove = new HashSet<String>();
-
-    for (String clazzName : classes) {
-      if (clazzName.contains(":")) {
-        if (lenient) {
-          toRemove.add(clazzName);
-        } else {
-          throw new Css2GssConversionException(
-              "One of your external statements contains a pseudo class: " + clazzName);
-        }
-      }
-    }
-    classes.removeAll(toRemove);
-  }
-
-  private void removeWrongEscaping(SortedSet<String> classes) {
-    Set<String> toRemove = new HashSet<String>();
-    Set<String> toAdd = new HashSet<String>();
-
-    for (String clazzName : classes) {
-      if (clazzName.contains("\\-")) {
-        toRemove.add(clazzName);
-        toAdd.add(clazzName.replace("\\-", "-"));
-      }
-    }
-    classes.removeAll(toRemove);
-    classes.addAll(toAdd);
-  }
-
-  private void removeWrongEntries(SortedSet<String> classes) {
-    Set<String> toRemove = new HashSet<String>();
-    Set<String> toAdd = new HashSet<String>();
-    for (String entry : classes) {
-      if(entry.contains("@external")){
-        toRemove.add(entry);
-        entry = entry.replace("@external", "");
-        entry = entry.replace(",", "");
-        entry = entry.replace("\n", "");
-        entry = entry.replace("\r", "");
-        toAdd.add(entry);
-      }
-    }
-    classes.removeAll(toRemove);
-    classes.addAll(toAdd);
   }
 
   public static void main(String... args) {

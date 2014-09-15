@@ -33,6 +33,9 @@ public abstract class RenamingClassNameTest extends GWTTestCase {
   public void testExternalClasses() {
     ExternalClasses externalClasses = res().externalClasses();
 
+    // external at-rule shouldn't be printed
+    assertFalse(externalClasses.getText().contains("@external"));
+
     assertNotSame("obfuscatedClass", externalClasses.obfuscatedClass());
 
     assertEquals("externalClass", externalClasses.externalClass());

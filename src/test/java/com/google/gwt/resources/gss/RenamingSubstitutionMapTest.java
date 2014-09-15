@@ -22,16 +22,13 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.google.gwt.core.ext.TreeLogger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RenamingSubstitutionMapTest {
@@ -48,39 +45,12 @@ public class RenamingSubstitutionMapTest {
 
 
     RenamingSubstitutionMap substitutionMap = new RenamingSubstitutionMap(replacementWithPrefix,
-        new HashSet<String>(), true, logger);
-
-
-    assertEquals("obfuscated1", substitutionMap.get("class1"));
-    assertEquals("obfuscated2", substitutionMap.get("class2"));
-    assertEquals("obfuscated3", substitutionMap.get("prefix1-class3"));
-    assertEquals("obfuscated4", substitutionMap.get("prefix1-class4"));
-    assertFalse(substitutionMap.hasError());
-  }
-
-  @Test
-  public void computeReplacementMapWithExternalClasses() {
-    TreeLogger logger = mock(TreeLogger.class);
-
-    Map<String, Map<String, String>> replacementWithPrefix = new HashMap<String, Map<String,
-        String>>();
-    replacementWithPrefix.put("", ImmutableMap.of("class1", "obfuscated1", "class2",
-        "obfuscated2", "external1", "obfExternal1", "external2", "obfExternal2"));
-    replacementWithPrefix.put("prefix1-", ImmutableMap.of("class3", "obfuscated3", "class4",
-        "obfuscated4"));
-
-    Set<String> externals = Sets.newHashSet("external1", "external2");
-
-    RenamingSubstitutionMap substitutionMap = new RenamingSubstitutionMap(replacementWithPrefix,
-       externals, true, logger);
-
+        true, logger);
 
     assertEquals("obfuscated1", substitutionMap.get("class1"));
     assertEquals("obfuscated2", substitutionMap.get("class2"));
     assertEquals("obfuscated3", substitutionMap.get("prefix1-class3"));
     assertEquals("obfuscated4", substitutionMap.get("prefix1-class4"));
-    assertEquals("external1", substitutionMap.get("external1"));
-    assertEquals("external2", substitutionMap.get("external2"));
     assertFalse(substitutionMap.hasError());
   }
 
@@ -94,7 +64,7 @@ public class RenamingSubstitutionMapTest {
 
 
     RenamingSubstitutionMap substitutionMap = new RenamingSubstitutionMap(replacementWithPrefix,
-        new HashSet<String>(), false, logger);
+        false, logger);
 
     assertEquals("obfuscated1", substitutionMap.get("class1"));
     assertEquals("notStrictClass", substitutionMap.get("notStrictClass"));
@@ -112,7 +82,7 @@ public class RenamingSubstitutionMapTest {
 
 
     RenamingSubstitutionMap substitutionMap = new RenamingSubstitutionMap(replacementWithPrefix,
-        new HashSet<String>(), true, logger);
+        true, logger);
 
     assertEquals("obfuscated1", substitutionMap.get("class1"));
     assertEquals("notStrictClass", substitutionMap.get("notStrictClass"));

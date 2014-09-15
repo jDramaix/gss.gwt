@@ -28,6 +28,7 @@ import com.google.gwt.dev.util.TextOutput;
 import com.google.gwt.resources.css.ast.Context;
 import com.google.gwt.resources.css.ast.CssDef;
 import com.google.gwt.resources.css.ast.CssEval;
+import com.google.gwt.resources.css.ast.CssExternalSelectors;
 import com.google.gwt.resources.css.ast.CssFontFace;
 import com.google.gwt.resources.css.ast.CssIf;
 import com.google.gwt.resources.css.ast.CssMediaRule;
@@ -43,9 +44,9 @@ import com.google.gwt.resources.css.ast.CssStylesheet;
 import com.google.gwt.resources.css.ast.CssUnknownAtRule;
 import com.google.gwt.resources.css.ast.CssUrl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
 import java.util.regex.Pattern;
 
 public class GssGenerationVisitor extends ExtendedCssVisitor {
@@ -66,32 +67,35 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   private static final String EXTERNAL = "@external";
   private static final String IMPORTANT = " !important";
   private static final Pattern UNESCAPE = Pattern.compile("\\\\");
+  private static final Pattern UNESCAPE_EXTERNAL = Pattern.compile("\\\\|@external|,|\\n|\\r");
 
 
   private final Map<String, String> defKeyMapping;
-
   private final TextOutput out;
   private final List<CssDef> constantNodes;
   private final boolean lenient;
+  private final TreeLogger treeLogger;
+  private final List<CssExternalSelectors> wrongExternalNodes;
 
   private boolean noFlip;
   private boolean newLine;
   private boolean needsOpenBrace;
   private boolean needsComma;
   private boolean inUrl;
-  private SortedSet<String> externalClassDefs;
-  private final TreeLogger treeLogger;
+  private boolean inMedia;
+  private boolean inPageRule;
+  private boolean inFontFace;
 
   public GssGenerationVisitor(TextOutput out, Map<String, String> defKeyMapping,
-      SortedSet<String> externalClassDefs, List<CssDef> constantNodes, boolean lenient,
+      List<CssDef> constantNodes, boolean lenient,
       TreeLogger treeLogger) {
     this.defKeyMapping = defKeyMapping;
     this.out = out;
     this.constantNodes = constantNodes;
     this.lenient = lenient;
-    this.externalClassDefs = externalClassDefs;
     this.treeLogger = treeLogger;
     newLine = true;
+    wrongExternalNodes = new ArrayList<CssExternalSelectors>();
   }
 
   public String getContent() {
@@ -101,6 +105,8 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
   @Override
   public void endVisit(CssFontFace x, Context ctx) {
     closeBrace();
+
+    inFontFace = false;
   }
 
 
@@ -109,6 +115,8 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     out.indentOut();
     out.print("}");
     out.newlineOpt();
+
+    inMedia = false;
   }
 
   @Override
@@ -116,6 +124,8 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     out.indentOut();
     out.print("}");
     out.newlineOpt();
+
+    inPageRule = false;
   }
 
   @Override
@@ -130,11 +140,11 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssStylesheet x, Context ctx) {
-    printExternalClasseDefinitions();
     printConstantNodes();
 
     return true;
   }
+
 
   private void printConstantNodes() {
 
@@ -155,28 +165,15 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     }
   }
 
-  private void printExternalClasseDefinitions() {
-    if (externalClassDefs.isEmpty()) {
+  @Override
+  public void endVisit(CssStylesheet x, Context ctx) {
+    if (!lenient) {
       return;
     }
 
-    out.print(EXTERNAL);
-    for (String className : externalClassDefs) {
-      out.print(" ");
-
-      boolean needQuote = className.endsWith("*");
-
-      if (needQuote) {
-        out.print("'");
-      }
-
-      out.printOpt(className);
-
-      if (needQuote) {
-        out.print("'");
-      }
+    for (CssExternalSelectors external : wrongExternalNodes) {
+      printExternal(external);
     }
-    semiColon();
   }
 
   @Override
@@ -222,6 +219,70 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
     noFlip = true;
     return true;
   }
+
+  @Override
+  public boolean visit(CssExternalSelectors x, Context ctx) {
+    if (inFontFace || inMedia || inPageRule) {
+      if (lenient) {
+        treeLogger.log(Type.WARN, "An external at-rule is not allowed inside a media," +
+            " font-face or page rule at-rule. The following external at-rule [" + x + "] will be " +
+            "moved in the main scope");
+        wrongExternalNodes.add(x);
+      } else {
+        treeLogger.log(Type.ERROR, "An external at-rule is not allowed inside a media," +
+            " font-face or page rule at-rule.");
+      }
+    } else {
+      printExternal(x);
+    }
+
+    return false;
+  }
+
+  private void printExternal(CssExternalSelectors x) {
+    boolean first = true;
+    for (String selector : x.getClasses()) {
+      String unescaped = unescapeExternalClass(selector);
+      if (validateExternalClass(selector) && !Strings.isNullOrEmpty(unescaped)) {
+        if (first) {
+          out.print(EXTERNAL);
+          first = false;
+        }
+
+        out.print(" ");
+
+        boolean needQuote = selector.endsWith("*");
+
+        if (needQuote) {
+          out.print("'");
+        }
+
+        out.printOpt(unescaped);
+
+        if (needQuote) {
+          out.print("'");
+        }
+      }
+    }
+
+    if (!first) {
+      semiColon();
+    }
+  }
+
+  private boolean validateExternalClass(String selector) {
+    if (selector.contains(":")) {
+      if (lenient) {
+        treeLogger.log(Type.WARN, "This invalid external selector will be skipped: "+ selector);
+        return false;
+      } else {
+        throw new Css2GssConversionException(
+            "One of your external statements contains a pseudo class: " + selector);
+      }
+    }
+    return true;
+  }
+
 
   @Override
   public void endVisit(CssNoFlip x, Context ctx) {
@@ -337,6 +398,8 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssFontFace x, Context ctx) {
+    inFontFace = true;
+
     out.print("@font-face");
     openBrace();
     return true;
@@ -344,6 +407,8 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssMediaRule x, Context ctx) {
+    inMedia = true;
+
     out.print("@media");
     boolean isFirst = true;
     for (String m : x.getMedias()) {
@@ -364,6 +429,8 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   @Override
   public boolean visit(CssPageRule x, Context ctx) {
+    inPageRule = true;
+
     out.print("@page");
     if (x.getPseudoPage() != null) {
       out.print(" :");
@@ -511,5 +578,9 @@ public class GssGenerationVisitor extends ExtendedCssVisitor {
 
   private String unescape(String toEscape) {
     return UNESCAPE.matcher(toEscape).replaceAll("");
+  }
+
+  private String unescapeExternalClass(String external) {
+    return UNESCAPE_EXTERNAL.matcher(external).replaceAll("");
   }
 }

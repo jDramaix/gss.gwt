@@ -25,7 +25,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
-import com.google.common.css.compiler.ast.CssClassSelectorNode;
+import com.google.common.collect.Sets;
 import com.google.common.css.compiler.ast.CssCompositeValueNode;
 import com.google.common.css.compiler.ast.CssLiteralNode;
 import com.google.common.css.compiler.ast.CssStringNode;
@@ -44,7 +44,6 @@ import java.util.Set;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ExternalClassesCollectorTest {
-  private ExternalClassesCollector externalClassesCollector;
   @Mock
   private CssUnknownAtRuleNode cssUnknownAtRuleNode;
   @Mock
@@ -56,11 +55,6 @@ public class ExternalClassesCollectorTest {
 
   @Before
   public void setUp() {
-    externalClassesCollector = new ExternalClassesCollector(mutatingVisitController);
-
-    // initialise the object but do nothing
-    externalClassesCollector.runPass();
-
     when(cssUnknownAtRuleNode.getName()).thenReturn(atRuleNameNode);
     when(cssUnknownAtRuleNode.getParameters()).thenReturn(
         Lists.<CssValueNode>newArrayList(atRuleParameters));
@@ -69,6 +63,7 @@ public class ExternalClassesCollectorTest {
   @Test
   public void leaveUnknownAtRule_notAnExternalAtRule_doNothing() {
     // Given
+    ExternalClassesCollector externalClassesCollector = createAndInitExternalClassesCollector();
     when(atRuleNameNode.getValue()).thenReturn("dummy");
 
     // When
@@ -82,6 +77,7 @@ public class ExternalClassesCollectorTest {
   @Test
   public void leaveUnknownAtRule_simpleExternalAtRule_classesReturnByGetExternalClass() {
     // Given
+    ExternalClassesCollector externalClassesCollector = createAndInitExternalClassesCollector();
     when(atRuleNameNode.getValue()).thenReturn("external");
 
     List<CssValueNode> parameters = Lists.newArrayList(literalNode("externalClass"),
@@ -106,12 +102,11 @@ public class ExternalClassesCollectorTest {
   @Test
   public void leaveUnknownAtRule_externalAtRuleWithMatchAllPrefix_allClassesAreExternals() {
     // Given
+    ExternalClassesCollector externalClassesCollector =
+        createAndInitExternalClassesCollector(Sets.newHashSet("class1", "class2", "class3"));
     when(atRuleNameNode.getValue()).thenReturn("external");
     List<CssValueNode> parameters = Lists.newArrayList(stringNode("*"));
     when(atRuleParameters.getValues()).thenReturn(parameters);
-    visitClassSelector("class1");
-    visitClassSelector("class2");
-    visitClassSelector("class3");
 
     // When
     externalClassesCollector.leaveUnknownAtRule(cssUnknownAtRuleNode);
@@ -131,6 +126,7 @@ public class ExternalClassesCollectorTest {
   @Test
   public void leaveUnknownAtRule_externalAtRuleWithMatchAllPrefixThenAnotherExternalAtRule_anotherAtRuleNotProcessed() {
     // Given
+    ExternalClassesCollector externalClassesCollector = createAndInitExternalClassesCollector();
     when(atRuleNameNode.getValue()).thenReturn("external");
     List<CssValueNode> parameters = Lists.newArrayList(stringNode("*"));
     when(atRuleParameters.getValues()).thenReturn(parameters);
@@ -152,14 +148,13 @@ public class ExternalClassesCollectorTest {
   @Test
   public void leaveUnknownAtRule_externalAtRuleWithPrefix_classesMatchingThePrefixAreExternals() {
     // Given
+    ExternalClassesCollector externalClassesCollector =
+        createAndInitExternalClassesCollector(Sets.newHashSet("prefix", "prefix-class1",
+            "prefi-notexternal","external"));
     when(atRuleNameNode.getValue()).thenReturn("external");
     List<CssValueNode> parameters = Lists.newArrayList(literalNode("external"),
         stringNode("prefix*"));
     when(atRuleParameters.getValues()).thenReturn(parameters);
-    visitClassSelector("prefix");
-    visitClassSelector("prefix-class1");
-    visitClassSelector("prefi-notexternal");
-    visitClassSelector("external");
 
     // When
     externalClassesCollector.leaveUnknownAtRule(cssUnknownAtRuleNode);
@@ -176,12 +171,6 @@ public class ExternalClassesCollectorTest {
     assertTrue(externalClasses.contains("external"));
   }
 
-  private void visitClassSelector(String styleClass) {
-    CssClassSelectorNode selector = mock(CssClassSelectorNode.class);
-    when(selector.getRefinerName()).thenReturn(styleClass);
-    externalClassesCollector.leaveClassSelector(selector);
-  }
-
   private CssValueNode literalNode(String externalClass) {
     CssValueNode node = mock(CssLiteralNode.class);
     when(node.getValue()).thenReturn(externalClass);
@@ -192,5 +181,19 @@ public class ExternalClassesCollectorTest {
     CssStringNode node = mock(CssStringNode.class);
     when(node.getConcreteValue()).thenReturn(selector);
     return node;
+  }
+
+  private ExternalClassesCollector createAndInitExternalClassesCollector() {
+    return createAndInitExternalClassesCollector(Sets.<String>newHashSet());
+  }
+
+  private ExternalClassesCollector createAndInitExternalClassesCollector(Set<String> classNames) {
+    ExternalClassesCollector externalClassesCollector =
+        new ExternalClassesCollector(mutatingVisitController, classNames);
+
+    // initialise the object but do nothing
+    externalClassesCollector.runPass();
+
+    return externalClassesCollector;
   }
 }
