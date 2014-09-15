@@ -19,10 +19,8 @@ package com.google.gwt.resources.gss;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.gwt.core.ext.TreeLogger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -34,8 +32,6 @@ import java.util.Map;
 public class RenamingSubstitutionMapTest {
   @Test
   public void computeReplacementMapWithPrefixedClasses() {
-    TreeLogger logger = mock(TreeLogger.class);
-
     Map<String, Map<String, String>> replacementWithPrefix = new HashMap<String, Map<String,
         String>>();
     replacementWithPrefix.put("", ImmutableMap.of("class1", "obfuscated1", "class2",
@@ -44,49 +40,28 @@ public class RenamingSubstitutionMapTest {
         "obfuscated4"));
 
 
-    RenamingSubstitutionMap substitutionMap = new RenamingSubstitutionMap(replacementWithPrefix,
-        true, logger);
+    RenamingSubstitutionMap substitutionMap = new RenamingSubstitutionMap(replacementWithPrefix);
 
     assertEquals("obfuscated1", substitutionMap.get("class1"));
     assertEquals("obfuscated2", substitutionMap.get("class2"));
     assertEquals("obfuscated3", substitutionMap.get("prefix1-class3"));
     assertEquals("obfuscated4", substitutionMap.get("prefix1-class4"));
-    assertFalse(substitutionMap.hasError());
+    assertTrue(substitutionMap.getExternalClassCandidates().isEmpty());
   }
 
   @Test
-  public void computeReplacementMapWithMissingCLassAndNotStrict() {
-    TreeLogger logger = mock(TreeLogger.class);
-
+  public void computeReplacementMapWithMissingCLass() {
     Map<String, Map<String, String>> replacementWithPrefix = new HashMap<String, Map<String,
         String>>();
     replacementWithPrefix.put("", ImmutableMap.of("class1", "obfuscated1"));
 
 
-    RenamingSubstitutionMap substitutionMap = new RenamingSubstitutionMap(replacementWithPrefix,
-        false, logger);
+    RenamingSubstitutionMap substitutionMap = new RenamingSubstitutionMap(replacementWithPrefix);
 
     assertEquals("obfuscated1", substitutionMap.get("class1"));
-    assertEquals("notStrictClass", substitutionMap.get("notStrictClass"));
+    assertEquals("otherClass", substitutionMap.get("otherClass"));
 
-    assertFalse(substitutionMap.hasError());
-  }
-
-  @Test
-  public void computeReplacementMapWithMissingCLassAndStrict() {
-    TreeLogger logger = mock(TreeLogger.class);
-
-    Map<String, Map<String, String>> replacementWithPrefix = new HashMap<String, Map<String,
-        String>>();
-    replacementWithPrefix.put("", ImmutableMap.of("class1", "obfuscated1"));
-
-
-    RenamingSubstitutionMap substitutionMap = new RenamingSubstitutionMap(replacementWithPrefix,
-        true, logger);
-
-    assertEquals("obfuscated1", substitutionMap.get("class1"));
-    assertEquals("notStrictClass", substitutionMap.get("notStrictClass"));
-
-    assertTrue(substitutionMap.hasError());
+    assertFalse(substitutionMap.getExternalClassCandidates().isEmpty());
+    assertTrue(substitutionMap.getExternalClassCandidates().contains("otherClass"));
   }
 }
