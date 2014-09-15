@@ -87,7 +87,7 @@ public class Css2GssTest {
   @Test
   public void testConstants() throws Exception {
     assertFileContentEqualsAfterConversion(
-        "constants.css", "constants.gss");
+        "constants.css", "constants.gss", true);
   }
 
   @Test

@@ -32,20 +32,28 @@ public class ValidateRuntimeConditionalNode extends DefaultTreeVisitor implement
 
   private final VisitController visitController;
   private final ErrorManager errorManager;
+  private final boolean lenient;
 
   private Stack<CssConditionalRuleNode> cssConditionalRuleNodes;
 
   public ValidateRuntimeConditionalNode(VisitController visitController,
-      ErrorManager errorManager) {
+      ErrorManager errorManager, boolean lenient) {
     this.visitController = visitController;
     this.errorManager = errorManager;
+    this.lenient = lenient;
   }
 
   @Override
   public boolean enterDefinition(CssDefinitionNode node) {
     if (inConditionalRule()) {
-      errorManager.report(new GssError("You cannot define a constant inside a ConditionalNode " +
-          "that will be evaluated at runtime.", node.getSourceCodeLocation()));
+      if (lenient) {
+        errorManager.reportWarning(new GssError("You should not define a constant inside a " +
+            "ConditionalNode that will be evaluated at runtime. This will be disallowed in " +
+            "GWT 3.0", node.getSourceCodeLocation()));
+      } else {
+        errorManager.report(new GssError("You cannot define a constant inside a ConditionalNode " +
+            "that will be evaluated at runtime.", node.getSourceCodeLocation()));
+      }
     }
     return false;
   }
@@ -53,8 +61,14 @@ public class ValidateRuntimeConditionalNode extends DefaultTreeVisitor implement
   @Override
   public boolean enterUnknownAtRule(CssUnknownAtRuleNode node) {
     if (inConditionalRule() && "external".equals(node.getName().getValue())) {
-      errorManager.report(new GssError("You cannot define a external at-rule inside a " +
-          "ConditionalNode that will be evaluated at runtime.", node.getSourceCodeLocation()));
+      if (lenient) {
+        errorManager.reportWarning(new GssError("You should not define a external at-rule inside" +
+            " a  ConditionalNode that will be evaluated at runtime. This will be disallowed in " +
+            "GWT 3.0", node.getSourceCodeLocation()));
+      } else {
+        errorManager.report(new GssError("You cannot define a external at-rule inside a " +
+            "ConditionalNode that will be evaluated at runtime.", node.getSourceCodeLocation()));
+      }
     }
     return super.enterUnknownAtRule(node);
   }

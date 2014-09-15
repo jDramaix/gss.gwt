@@ -75,8 +75,7 @@ public class Css2Gss {
       new FontFamilyVisitor().accept(sheet);
 
       GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(
-          new DefaultTextOutput(false), defNameMapping,
-          defCollectorVisitor.getConstantNodes(), lenient, treeLogger);
+          new DefaultTextOutput(false), defNameMapping, lenient, treeLogger);
       gssGenerationVisitor.accept(sheet);
 
       return gssGenerationVisitor.getContent();

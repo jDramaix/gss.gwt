@@ -34,7 +34,12 @@
   @if locale en {
     @external bar;
     .bar {}
-  } @else {
+  }
+  @elif (com.bar.foo()) {
+    @external foo2;
+    .foo2 {}
+  }
+  @else {
     @external baz;
     .baz {}
   }
