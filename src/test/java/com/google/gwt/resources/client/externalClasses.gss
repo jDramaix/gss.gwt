@@ -1,4 +1,4 @@
-@external externalClass, "unobfuscated*";
+@external externalClass, externalWithoutMethod, "unobfuscated*";
 
 @if (is("test.property", "true")) {
   @external externalClass2;
@@ -25,4 +25,8 @@
 
 .unobfuscated2 {
     height: 50px;
+}
+
+.externalWithoutMethod {
+  color: white;
 }

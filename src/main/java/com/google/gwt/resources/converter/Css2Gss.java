@@ -38,6 +38,7 @@ public class Css2Gss {
   private final TreeLogger treeLogger;
   private final boolean lenient;
 
+  private PrintWriter printWriter;
   private Map<String, String> defNameMapping;
 
   public Css2Gss(String filePath) throws MalformedURLException {
@@ -55,31 +56,40 @@ public class Css2Gss {
   }
 
   public Css2Gss(URL resource, boolean lenient) {
-    this(resource, new PrintWriterTreeLogger(new PrintWriter(System.out)), lenient);
+    cssFile = resource;
+    printWriter = new PrintWriter(System.out);
+    this.treeLogger = new PrintWriterTreeLogger(printWriter);
+    this.lenient = lenient;
   }
 
   public String toGss() throws UnableToCompleteException {
-      CssStylesheet sheet = GenerateCssAst.exec(treeLogger, cssFile);
+      try {
+        CssStylesheet sheet = GenerateCssAst.exec(treeLogger, cssFile);
 
-      DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(lenient, treeLogger);
-      defCollectorVisitor.accept(sheet);
-      defNameMapping = defCollectorVisitor.getDefMapping();
 
-      new UndefinedConstantVisitor(new HashSet<String>(defNameMapping.values()),
-          lenient, treeLogger).accept(sheet);
+        DefCollectorVisitor defCollectorVisitor = new DefCollectorVisitor(lenient, treeLogger);
+        defCollectorVisitor.accept(sheet);
+        defNameMapping = defCollectorVisitor.getDefMapping();
 
-      new ElseNodeCreator().accept(sheet);
+        new UndefinedConstantVisitor(new HashSet<String>(defNameMapping.values()),
+            lenient, treeLogger).accept(sheet);
 
-      new AlternateAnnotationCreatorVisitor().accept(sheet);
+        new ElseNodeCreator().accept(sheet);
 
-      new FontFamilyVisitor().accept(sheet);
+        new AlternateAnnotationCreatorVisitor().accept(sheet);
 
-      GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(
-          new DefaultTextOutput(false), defNameMapping,
-          defCollectorVisitor.getConstantNodes(), lenient, treeLogger);
-      gssGenerationVisitor.accept(sheet);
+        new FontFamilyVisitor().accept(sheet);
 
-      return gssGenerationVisitor.getContent();
+        GssGenerationVisitor gssGenerationVisitor = new GssGenerationVisitor(
+            new DefaultTextOutput(false), defNameMapping, lenient, treeLogger);
+        gssGenerationVisitor.accept(sheet);
+
+        return gssGenerationVisitor.getContent();
+      } finally {
+        if (printWriter != null) {
+          printWriter.flush();
+        }
+      }
   }
 
   /**

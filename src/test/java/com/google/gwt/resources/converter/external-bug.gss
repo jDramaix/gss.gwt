@@ -23,6 +23,9 @@
     padding-bottom: 0;
   }
 }
+@external appFooter-appPanel;
+@external appFooter-linksPanelWithApps;
+@external panel;
 
 @if (is("user.agent", "safari")) {
   @external foo;
@@ -34,6 +37,11 @@
     .bar {
     }
   }
+  @elseif (eval('com.bar.foo()')) {
+    @external foo2;
+    .foo2 {
+    }
+  }
   @else  {
     @external baz;
     .baz {
@@ -43,6 +51,3 @@
 @external foo;
 @external dragdrop-proxy;
 @external dragdrop-selected dragdrop-movable-panel;
-@external appFooter-appPanel;
-@external appFooter-linksPanelWithApps;
-@external panel;

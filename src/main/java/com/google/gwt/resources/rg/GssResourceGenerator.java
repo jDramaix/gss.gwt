@@ -103,7 +103,6 @@ import com.google.gwt.resources.ext.ResourceGeneratorUtil;
 import com.google.gwt.resources.ext.SupportsGeneratorResultCaching;
 import com.google.gwt.resources.gss.CreateRuntimeConditionalNodes;
 import com.google.gwt.resources.gss.CssPrinter;
-import com.google.gwt.resources.gss.ValidateRuntimeConditionalNode;
 import com.google.gwt.resources.gss.ExtendedEliminateConditionalNodes;
 import com.google.gwt.resources.gss.ExternalClassesCollector;
 import com.google.gwt.resources.gss.GwtGssFunctionMapProvider;
@@ -112,6 +111,7 @@ import com.google.gwt.resources.gss.PermutationsCollector;
 import com.google.gwt.resources.gss.RecordingBidiFlipper;
 import com.google.gwt.resources.gss.RenamingSubstitutionMap;
 import com.google.gwt.resources.gss.RuntimeConditionalNodeCollector;
+import com.google.gwt.resources.gss.ValidateRuntimeConditionalNode;
 import com.google.gwt.resources.rg.CssResourceGenerator.JClassOrderComparator;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.gwt.user.rebind.StringSourceWriter;
@@ -122,7 +122,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -186,9 +185,19 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     final String gss;
     final Map<String, String> defNameMapping;
 
-    private ConversionResult(String gss,  Map<String, String> defNameMapping) {
+    private ConversionResult(String gss, Map<String, String> defNameMapping) {
       this.gss = gss;
       this.defNameMapping = defNameMapping;
+    }
+  }
+
+  private static class RenamingResult {
+    final Map<String, String> mapping;
+    final Set<String> externalClassCandidate;
+
+    private RenamingResult(Map<String, String> mapping, Set<String> externalClassCandidate) {
+      this.mapping = mapping;
+      this.externalClassCandidate = externalClassCandidate;
     }
   }
 
@@ -267,7 +276,7 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       throws UnableToCompleteException {
     ExtendedCssTree extendedCssTree = cssTreeMap.get(method);
 
-    Map<String, String> substitutionMap = doClassRenaming(extendedCssTree.tree,
+    RenamingResult renamingResult = doClassRenaming(extendedCssTree.tree,
         method, logger, context);
 
     // TODO : Should we foresee configuration properties for simplifyCss and eliminateDeadCode
@@ -276,19 +285,45 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
     checkErrors();
 
-    revertRenamingOfExternalClasses(extendedCssTree.tree, substitutionMap);
+    Set<String> externalClasses = revertRenamingOfExternalClasses(extendedCssTree.tree,
+        renamingResult.mapping);
+
+    // Validate that classes not assigned to one of the interface methods are external
+    validateExternalClasses(externalClasses, renamingResult.externalClassCandidate, method, logger);
 
     SourceWriter sw = new StringSourceWriter();
     sw.println("new " + method.getReturnType().getQualifiedSourceName() + "() {");
     sw.indent();
 
     writeMethods(logger, context, method, sw, constantDefinitions,
-        extendedCssTree.originalConstantNameMapping, substitutionMap);
+        extendedCssTree.originalConstantNameMapping, renamingResult.mapping);
 
     sw.outdent();
     sw.println("}");
 
     return sw.toString();
+  }
+
+  private void validateExternalClasses(Set<String> externalClasses,
+      Set<String> externalClassCandidates, JMethod method,
+      TreeLogger logger) throws UnableToCompleteException {
+    if (!isStrictResource(method)) {
+      return;
+    }
+
+    boolean hasError = false;
+
+    for (String candidate : externalClassCandidates) {
+      if (!externalClasses.contains(candidate)) {
+        logger.log(Type.ERROR, "The following non-obfuscated class is present in a strict " +
+            "CssResource: " + candidate);
+        hasError = true;
+      }
+    }
+
+    if (hasError) {
+      throw new UnableToCompleteException();
+    }
   }
 
   @Override
@@ -316,7 +351,9 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
 
       allowLegacy = "true".equals(propertyOracle.getConfigurationProperty(KEY_LEGACY).getValues()
           .get(0));
-      lenientConversion = "lenient".equals(propertyOracle
+
+      // enable lenient conversion when legacy mode is enabled
+      lenientConversion = allowLegacy && "lenient".equals(propertyOracle
           .getConfigurationProperty(KEY_CONVERSION_MODE).getValues().get(0));
 
       ClientBundleRequirements requirements = context.getRequirements();
@@ -503,26 +540,22 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     return new CssTree(cssTree.getSourceCode(), cssTree.getRoot().deepCopy());
   }
 
-  private Map<String, String> doClassRenaming(CssTree cssTree, JMethod method, TreeLogger logger,
+  private RenamingResult doClassRenaming(CssTree cssTree, JMethod method, TreeLogger logger,
       ResourceContext context) throws UnableToCompleteException {
     Map<String, Map<String, String>> replacementsWithPrefix = computeReplacements(method, logger,
         context);
 
-    RenamingSubstitutionMap substitutionMap = new RenamingSubstitutionMap(replacementsWithPrefix,
-        isStrictResource(method), logger);
+    RenamingSubstitutionMap substitutionMap = new RenamingSubstitutionMap(replacementsWithPrefix);
 
     new CssClassRenaming(cssTree.getMutatingVisitController(), substitutionMap, null).runPass();
 
-    if (substitutionMap.hasError()) {
-      throw new UnableToCompleteException();
-    }
 
     Map<String, String> mapping = replacementsWithPrefix.get("");
 
     mapping = Maps.newHashMap(Maps.filterKeys(mapping, Predicates.in(substitutionMap
         .getStyleClasses())));
 
-    return mapping;
+    return new RenamingResult(mapping, substitutionMap.getExternalClassCandidates());
   }
 
   /**
@@ -530,16 +563,16 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
    * renaming for these classes. We cannot collect the external classes during the original renaming
    * because some external at-rule could be located inside a conditional block and could be
    * removed when these blocks are evaluated.
-   *
    */
-  private void revertRenamingOfExternalClasses(CssTree cssTree, Map<String,
+  private Set<String> revertRenamingOfExternalClasses(CssTree cssTree, Map<String,
       String> styleClassesMapping) {
     ExternalClassesCollector externalClassesCollector = new ExternalClassesCollector(cssTree
         .getMutatingVisitController(), styleClassesMapping.keySet());
 
     externalClassesCollector.runPass();
 
-    Collection<String> externalClasses = externalClassesCollector.getExternalClassNames();
+    Set<String> externalClasses = externalClassesCollector.getExternalClassNames();
+
 
     final Map<String, String> revertMap = new HashMap<String, String>(externalClasses.size());
 
@@ -556,7 +589,10 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       }
     };
 
-    new CssClassRenaming(cssTree.getMutatingVisitController(), revertExternalClasses, null).runPass();
+    new CssClassRenaming(cssTree.getMutatingVisitController(), revertExternalClasses, null)
+        .runPass();
+
+    return externalClasses;
   }
 
 
@@ -621,7 +657,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
         getPermutationsConditions(context, extendedCssTree.permutationAxes),
         runtimeConditionalNodeCollector.getRuntimeConditionalNodes()).runPass();
 
-    new ValidateRuntimeConditionalNode(cssTree.getVisitController(),errorManager).runPass();
+    new ValidateRuntimeConditionalNode(cssTree.getVisitController(), errorManager,
+        lenientConversion).runPass();
 
     // Don't continue if errors exist
     checkErrors();
@@ -709,11 +746,11 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       // TODO(dankurka): add link explaining the situation in detail.
       logger.log(Type.ERROR,
           "Your ClientBundle is referencing css files instead of gss. "
-          + "You will need to either convert these files to gss using the "
-          + "converter tool or turn on auto convertion in your gwt.xml file. "
-          + "Note: Autoconversion will be removed after 2.7, you will need to move to gss."
-          + "Add this line to your gwt.xml file to temporary avoid this:"
-          + "<set-configuration-property name=\"CssResource.legacy\" value=\"true\" />");
+              + "You will need to either convert these files to gss using the "
+              + "converter tool or turn on auto convertion in your gwt.xml file. "
+              + "Note: Autoconversion will be removed after 2.7, you will need to move to gss."
+              + "Add this line to your gwt.xml file to temporary avoid this:"
+              + "<set-configuration-property name=\"CssResource.legacy\" value=\"true\" />");
       throw new UnableToCompleteException();
     }
 
@@ -761,7 +798,8 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
     return new ExtendedCssTree(tree, permutationAxes, constantNameMappingBuilder.build());
   }
 
-  private ConversionResult convertToGss(String concatenatedCss, TreeLogger logger) throws UnableToCompleteException {
+  private ConversionResult convertToGss(String concatenatedCss, TreeLogger logger)
+      throws UnableToCompleteException {
     File tempFile = null;
     FileOutputStream fos = null;
     try {
@@ -790,16 +828,17 @@ public class GssResourceGenerator extends AbstractCssResourceGenerator implement
       logger.log(Type.ERROR, "Error while writing temporary css file", e);
       throw new UnableToCompleteException();
     } finally {
-      if(tempFile != null) {
+      if (tempFile != null) {
         tempFile.delete();
       }
-      if (fos!= null) {
+      if (fos != null) {
         IOUtils.closeQuietly(fos);
       }
     }
   }
 
-  private String concatCssFiles(List<URL> resources, TreeLogger logger) throws UnableToCompleteException {
+  private String concatCssFiles(List<URL> resources, TreeLogger logger)
+      throws UnableToCompleteException {
     StringBuffer buffer = new StringBuffer();
     for (URL stylesheet : resources) {
       try {
